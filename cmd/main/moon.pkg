@@ -1,0 +1,5 @@
+import {
+  "Lyhdsba/fusekite",
+}
+
+pkgtype(kind: "executable")
