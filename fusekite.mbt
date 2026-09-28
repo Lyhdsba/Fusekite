@@ -131,6 +131,8 @@ fn merge_round(current : Array[Cube]) -> (Array[Cube], Array[Bool]) {
 ///
 /// `input_count` is limited to eight so a complete truth table stays bounded.
 /// Minterms and don't-care rows must be unique, in range, and disjoint.
+/// The row arrays are copied after validation so caller mutations cannot
+/// invalidate the resulting specification.
 pub fn TruthSpec::new(
   input_count : Int,
   on_set : Array[Int],
@@ -157,7 +159,7 @@ pub fn TruthSpec::new(
       return None
     }
   }
-  Some({ input_count, on_set, dont_cares, })
+  Some({ input_count, on_set: on_set.copy(), dont_cares: dont_cares.copy(), })
 }
 
 ///|

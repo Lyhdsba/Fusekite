@@ -35,6 +35,22 @@ test "truth table rejects invalid dimensions and row sets" {
 }
 
 ///|
+test "validated truth spec is unaffected by later input-array mutations" {
+  let on_set = [1]
+  let dont_cares = [3]
+  let spec = match @fusekite.TruthSpec::new(2, on_set, dont_cares) {
+    Some(spec) => spec
+    None => fail("valid truth table was rejected")
+  }
+
+  on_set.push(2)
+  dont_cares.push(0)
+
+  assert_eq(spec.minterm_count(), 1)
+  assert_eq(@fusekite.minimize_sop(spec).patterns(), ["-1"])
+}
+
+///|
 test "eight-input upper boundary preserves the most significant bit" {
   let spec = match @fusekite.TruthSpec::new(8, [255], [254]) {
     Some(spec) => spec

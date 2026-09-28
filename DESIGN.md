@@ -6,6 +6,7 @@
 - Row numbers are unsigned binary indices. The first input is the most significant bit.
 - The on-set and don't-care set are unique, disjoint, and within the truth-table range.
 - Rows omitted from both sets are required zeroes.
+- `TruthSpec::new` copies both row arrays after validation, so later caller mutations cannot invalidate the specification.
 
 ## Refinement invariant
 
