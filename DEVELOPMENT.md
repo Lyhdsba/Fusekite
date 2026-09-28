@@ -31,8 +31,9 @@ commit history and this record should be read together.
 | `7427929` | Snapshotted caller-owned truth-table arrays during validation | Added a regression test; 23 tests passed and [remote CI passed](https://github.com/Lyhdsba/Fusekite/actions/runs/36408528637). |
 | `0dd93e0` | Hid validated row arrays and exposed defensive-copy accessors | Added a cross-package mutation regression; 23 tests and local format, check, build, demo, docs, and package checks passed before push. |
 
-These entries describe commits and checks that exist. They are not a diary and
-do not represent unrecorded manual review.
+This table records verifiable commits and checks. Automated results do not
+establish independent manual review, hardware correctness, or electrical
+qualification.
 
 ## Reproduce the automated checks
 
@@ -53,19 +54,12 @@ functions, the three circuit truth tables, arithmetic-limit checks for package
 rounding, and sparse eight-input cases. Passing automated checks does not
 establish electrical safety or prove that a person has reviewed the design.
 
-## Maintainer review before a competition submission
+## Validation scope
 
-The following review has not been signed off in this record. The maintainer
-should complete it personally and record only checks actually performed:
-
-- [ ] Explain the refinement, coverage chart, exact-cover ranking, and the
-  eight-input bound without relying on generated prose.
-- [ ] Reproduce the build, test, and runnable example commands from a clean
-  checkout, and inspect the corresponding CI run.
-- [ ] Check the exact orderable SN74HC device variants and their datasheets for
-  supply range, thresholds, output loading, timing, unused inputs, and the
-  display-driver circuit. The included package estimate is structural only.
-- [ ] If a physical or simulator test is claimed, attach its actual schematic,
-  test setup, and observed results. No hardware test is claimed here.
-- [ ] Check the competition's authorship and AI-assistance rules and describe
-  this project's AI contribution accurately in the application.
+The recorded checks cover software formatting, type checking, tests, builds,
+documentation, packaging, and the runnable examples. They do not claim an
+independent line-by-line review, physical or simulator testing, electrical
+qualification, or approval under a particular competition's AI-use rules.
+The submitter should be able to explain the minimization and tie-break rules,
+reproduce the checks, and verify the exact selected device variants before
+making claims about hardware behavior.

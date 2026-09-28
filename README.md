@@ -63,8 +63,8 @@ The GitHub Actions workflow pins an Ubuntu LTS image and a Node 24-compatible
 checkout action, then runs formatting, check, tests, build, and the demo on
 pushes to `main` and pull requests.
 
-See [DEVELOPMENT.md](DEVELOPMENT.md) for the contribution boundary, reproducible
-checks, and the maintainer review items that remain before submission.
+See [DEVELOPMENT.md](DEVELOPMENT.md) for the AI contribution statement,
+reproducible checks, and validation limits.
 
 ## Mooncakes metadata
 
