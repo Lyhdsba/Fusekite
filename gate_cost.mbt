@@ -9,6 +9,19 @@ pub struct GateCost {
 }
 
 ///|
+/// Create a gate-count value, rejecting negative counts.
+pub fn GateCost::new(
+  inverters : Int,
+  and2_gates : Int,
+  or2_gates : Int,
+) -> GateCost? {
+  if inverters < 0 || and2_gates < 0 || or2_gates < 0 {
+    return None
+  }
+  Some({ inverters, and2_gates, or2_gates, })
+}
+
+///|
 /// A simple gate-count estimate for implementing a selected SOP cover.
 ///
 /// Each product of `n` literals uses `n - 1` two-input AND gates. Products are
