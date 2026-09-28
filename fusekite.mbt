@@ -89,7 +89,8 @@ fn Cube::merge(self : Cube, other : Cube) -> Cube? {
 }
 
 ///|
-fn Cube::covers_row(self : Cube, row : Int) -> Bool {
+/// Return whether this implicant matches a truth-table row.
+pub fn Cube::covers_row(self : Cube, row : Int) -> Bool {
   (row & (((1 << self.width) - 1) ^ self.wildcard)) == self.value
 }
 

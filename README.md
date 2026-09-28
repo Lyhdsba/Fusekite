@@ -6,7 +6,7 @@ Fusekite is a MoonBit project for reducing small combinational circuits and, ove
 
 ## Current stage
 
-Fusekite validates a single-output truth table, builds deterministic Quine–McCluskey merge rounds and a minterm-to-prime chart, identifies essential implicants, and chooses an exact minimum SOP cover. Don't-care rows can help form implicants; a prime that covers only don't-care rows is left out. POS output and physical IC planning remain planned work.
+Fusekite validates a single-output truth table, builds deterministic Quine–McCluskey merge rounds and a minterm-to-prime chart, identifies essential implicants, and chooses an exact minimum SOP cover. Don't-care rows can help form implicants; a prime that covers only don't-care rows is left out. It also estimates a direct SOP gate count, maps that estimate to a small sourced 74HC catalog, and includes three worked circuit examples with independent truth-table checks.
 
 This scope is intentionally bounded to one output and at most eight inputs. Fusekite is an educational planning aid, not a substitute for datasheet checks, timing analysis, or electrical safety review.
 
@@ -29,14 +29,14 @@ moon run cmd/main
 ## Planned work
 
 1. **Truth-table refinement and SOP cover** — implemented with explicit validation, coverage chart, essentials, and deterministic exact selection.
-2. **Bench planning** — compare gate count and common 74HC implementations, with pin-level notes and worked electronic-lab examples.
-3. **POS and circuit checks** — add POS presentation and independent truth-table verification for the finished plans.
+2. **Bench planning** — documented two-level gate estimates, TI-sourced 74HC channel counts, and three verified circuit examples are implemented. Pin-level wiring and electrical qualification remain future work.
+3. **POS and circuit checks** — POS presentation and broader circuit verification remain future work.
 
 The planned examples are a two-sensor interlock, one BCD-to-seven-segment output, and a threshold/alarm condition. They are separate from waveform processing, PCB/stock optimization, and agent audit tooling.
 
 ## Project shape
 
-The core is a single root MoonBit package so the Boolean rules can be read in one place. `coverage.mbt` exposes row-to-prime relationships and `cover.mbt` contains exact selection; a small executable lives under `cmd/main`. Device data and worked circuits will live under `parts/` and `circuits/`.
+The core is a single root MoonBit package so the Boolean rules can be read in one place. `coverage.mbt` exposes row-to-prime relationships, `cover.mbt` contains exact selection, and `gate_cost.mbt` provides primitive counts. The `parts/` package contains a small sourced catalog; `circuits/` contains examples and independent checks; a small executable lives under `cmd/main`.
 
 ## Build and test
 
