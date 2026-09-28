@@ -4,9 +4,9 @@
 /// Rows are numbered in binary order: the first variable is the most
 /// significant bit. The all-zero row is row 0.
 pub struct TruthSpec {
-  input_count : Int
-  on_set : Array[Int]
-  dont_cares : Array[Int]
+  priv input_count : Int
+  priv on_set : Array[Int]
+  priv dont_cares : Array[Int]
 }
 
 ///|
@@ -172,6 +172,18 @@ pub fn TruthSpec::variable_count(self : TruthSpec) -> Int {
 /// Number of rows whose output is one.
 pub fn TruthSpec::minterm_count(self : TruthSpec) -> Int {
   self.on_set.length()
+}
+
+///|
+/// Return a copy of the required one-rows.
+pub fn TruthSpec::minterms(self : TruthSpec) -> Array[Int] {
+  self.on_set.copy()
+}
+
+///|
+/// Return a copy of the don't-care rows.
+pub fn TruthSpec::dont_care_rows(self : TruthSpec) -> Array[Int] {
+  self.dont_cares.copy()
 }
 
 ///|

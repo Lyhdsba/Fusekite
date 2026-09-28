@@ -35,7 +35,7 @@ test "truth table rejects invalid dimensions and row sets" {
 }
 
 ///|
-test "validated truth spec is unaffected by later input-array mutations" {
+test "truth spec protects its validated rows from caller mutation" {
   let on_set = [1]
   let dont_cares = [3]
   let spec = match @fusekite.TruthSpec::new(2, on_set, dont_cares) {
@@ -45,8 +45,14 @@ test "validated truth spec is unaffected by later input-array mutations" {
 
   on_set.push(2)
   dont_cares.push(0)
+  let returned_minterms = spec.minterms()
+  let returned_dont_cares = spec.dont_care_rows()
+  returned_minterms.push(2)
+  returned_dont_cares.push(0)
 
   assert_eq(spec.minterm_count(), 1)
+  assert_eq(spec.minterms(), [1])
+  assert_eq(spec.dont_care_rows(), [3])
   assert_eq(@fusekite.minimize_sop(spec).patterns(), ["-1"])
 }
 
