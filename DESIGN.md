@@ -24,3 +24,20 @@ Covers are ranked by fewest product terms, then fewest total literals, then the 
 - Add POS rendering without changing the current SOP contract.
 - Device-level costs should come from an explicit, versioned part catalog rather than guessed datasheet values.
 - Example circuits will state their assumptions and show how to verify them against a physical part's datasheet.
+
+## Two-level gate-count estimate
+
+`estimate_sop_gate_cost` maps each selected product to a two-input AND tree and
+joins multiple products with a two-input OR tree. An input complement is
+counted once per variable and shared by every product that needs it. A single
+literal or a one-product sum needs no AND or OR gate in this structural model.
+`GateCost::packages_for` rounds a nonnegative channel count up to whole
+packages; it does not choose a part.
+
+This estimate is intentionally limited to gate counts for a direct SOP
+implementation. It does not perform technology mapping, exploit NAND/NOR
+forms, share internal product subexpressions, estimate delay or power, check
+fan-out, or account for board wiring and unused package inputs. The part
+catalog records channel counts from manufacturer documentation, while a real
+build still needs a selected package variant and datasheet-level electrical
+checks.
