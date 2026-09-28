@@ -20,11 +20,16 @@ let solution = minimize_sop(spec.unwrap())
 println(solution.patterns()) // ["--1"]
 ```
 
-Run the demo with:
+Run all three electronics demonstrations with:
 
 ```sh
 moon run cmd/main
 ```
+
+The demo prints each selected cover, primitive gate count and a whole-package
+estimate for SN74HC04/08/32. Device assumptions and full truth tables are in
+[`circuits/WORKED.md`](circuits/WORKED.md); the sourced catalog is described in
+[`parts/74hc-catalog.md`](parts/74hc-catalog.md).
 
 ## Planned work
 
@@ -41,10 +46,32 @@ The core is a single root MoonBit package so the Boolean rules can be read in on
 ## Build and test
 
 ```sh
-moon check
-moon test
 moon fmt --check
+moon check --deny-warn
+moon test
+moon build
+moon run cmd/main
+moon doc
+moon package --list
 ```
+
+The GitHub Actions workflow runs formatting, check, tests, build, and the demo
+on pushes to `main` and pull requests.
+
+## Mooncakes metadata
+
+This module is named `Lyhdsba/fusekite` and its current metadata is in
+[`moon.mod`](moon.mod): version `0.2.0`, Apache-2.0 license, repository URL,
+keywords, and a short description. The repository URL also serves as its
+project homepage. To publish a version after logging in to Mooncakes,
+review and increment the semantic version as appropriate, then run:
+
+```sh
+moon publish
+```
+
+Publishing is a separate release action; this repository change prepares the
+metadata and package contents but does not publish a package.
 
 ## License
 

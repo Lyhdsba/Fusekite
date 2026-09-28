@@ -1,5 +1,7 @@
 import {
   "Lyhdsba/fusekite",
+  "Lyhdsba/fusekite/circuits",
+  "Lyhdsba/fusekite/parts",
 }
 
 pkgtype(kind: "executable")
