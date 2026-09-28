@@ -55,8 +55,9 @@ moon doc
 moon package --list
 ```
 
-The GitHub Actions workflow runs formatting, check, tests, build, and the demo
-on pushes to `main` and pull requests.
+The GitHub Actions workflow pins an Ubuntu LTS image and a Node 24-compatible
+checkout action, then runs formatting, check, tests, build, and the demo on
+pushes to `main` and pull requests.
 
 See [DEVELOPMENT.md](DEVELOPMENT.md) for the contribution boundary, reproducible
 checks, and the maintainer review items that remain before submission.
