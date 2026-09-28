@@ -13,9 +13,14 @@ A cube stores a value mask and a wildcard mask. Two cubes merge only when their 
 
 The first stage stops at prime implicants. It does not yet choose a cover, claim a globally minimal gate network, or model propagation delay and loading.
 
+## Cover selection
+
+The chart contains only required one-rows; don't-care rows may expand a prime but do not need coverage. A required row with one chart entry makes that prime essential. The exact selector starts with all primes as a valid upper bound, seeds the search with essential primes, then branches on the uncovered row with the fewest remaining coverers. It memoizes sorted selected-index states and uses a maximum-new-coverage lower bound to prune branches.
+
+Covers are ranked by fewest product terms, then fewest total literals, then the lexicographically smallest sorted pattern list, with `- < 0 < 1`. The chart sorts patterns in that same order, so the final tie-break is stable.
+
 ## Decision points for later increments
 
-- The cover solver must preserve every required one while never covering a required zero.
-- Covers are ordered by fewest product terms, then fewest total literals, then the lexicographically smallest sorted pattern list, with `- < 0 < 1`.
+- Add POS rendering without changing the current SOP contract.
 - Device-level costs should come from an explicit, versioned part catalog rather than guessed datasheet values.
 - Example circuits will state their assumptions and show how to verify them against a physical part's datasheet.
