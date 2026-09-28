@@ -18,6 +18,11 @@ pub fn GateCost::new(
   if inverters < 0 || and2_gates < 0 || or2_gates < 0 {
     return None
   }
+  let max_int = 2147483647
+  if and2_gates > max_int - inverters ||
+    or2_gates > max_int - inverters - and2_gates {
+    return None
+  }
   Some({ inverters, and2_gates, or2_gates, })
 }
 
@@ -68,7 +73,12 @@ pub fn GateCost::packages_for(gates : Int, channels : Int) -> Int? {
   if gates < 0 || channels <= 0 {
     return None
   }
-  Some((gates + channels - 1) / channels)
+  let whole_packages = gates / channels
+  if gates % channels == 0 {
+    Some(whole_packages)
+  } else {
+    Some(whole_packages + 1)
+  }
 }
 
 ///|
@@ -103,4 +113,7 @@ test "package counts round up and reject invalid dimensions" {
   assert_eq(GateCost::packages_for(5, 4), Some(2))
   assert_true(GateCost::packages_for(-1, 4) is None)
   assert_true(GateCost::packages_for(1, 0) is None)
+  assert_eq(GateCost::packages_for(2147483647, 1), Some(2147483647))
+  assert_eq(GateCost::packages_for(2147483647, 4), Some(536870912))
+  assert_true(GateCost::new(2147483647, 1, 0) is None)
 }

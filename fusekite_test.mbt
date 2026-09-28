@@ -26,10 +26,37 @@ test "don't-care rows can participate in a merge" {
 test "truth table rejects invalid dimensions and row sets" {
   assert_true(@fusekite.TruthSpec::new(0, [], []) is None)
   assert_true(@fusekite.TruthSpec::new(9, [], []) is None)
+  assert_true(@fusekite.TruthSpec::new(1, [1], []) is Some(_))
+  assert_true(@fusekite.TruthSpec::new(8, [255], []) is Some(_))
   assert_true(@fusekite.TruthSpec::new(2, [4], []) is None)
   assert_true(@fusekite.TruthSpec::new(2, [1, 1], []) is None)
   assert_true(@fusekite.TruthSpec::new(2, [1], [1]) is None)
   assert_true(@fusekite.TruthSpec::new(2, [], [2, 2]) is None)
+}
+
+///|
+test "eight-input upper boundary preserves the most significant bit" {
+  let spec = match @fusekite.TruthSpec::new(8, [255], [254]) {
+    Some(spec) => spec
+    None => fail("valid upper-bound truth table was rejected")
+  }
+  let solution = @fusekite.minimize_sop(spec)
+  assert_eq(solution.patterns(), ["1111111-"])
+  assert_true(solution.selected[0].covers_row(255))
+  assert_true(solution.selected[0].covers_row(254))
+  assert_true(!solution.selected[0].covers_row(253))
+}
+
+///|
+test "eight-input separated endpoints remain a valid exact cover" {
+  let spec = match @fusekite.TruthSpec::new(8, [0, 255], []) {
+    Some(spec) => spec
+    None => fail("valid endpoint truth table was rejected")
+  }
+  let solution = @fusekite.minimize_sop(spec)
+  assert_eq(solution.patterns(), ["00000000", "11111111"])
+  assert_eq(solution.term_count, 2)
+  assert_eq(solution.literal_count, 16)
 }
 
 ///|

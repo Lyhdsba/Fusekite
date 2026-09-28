@@ -1,6 +1,6 @@
 # Fusekite
 
-**Truth table in. A breadboard-sized logic plan out.**
+**Truth table in. A small-gate estimate out.**
 
 Fusekite is a MoonBit project for reducing small combinational circuits and, over time, turning the result into a practical gate-level plan for electronics labs. It focuses on the gap between a classroom Boolean expression and a circuit someone can wire with common 74HC parts.
 
@@ -37,7 +37,7 @@ estimate for SN74HC04/08/32. Device assumptions and full truth tables are in
 2. **Bench planning** — documented two-level gate estimates, TI-sourced 74HC channel counts, and three verified circuit examples are implemented. Pin-level wiring and electrical qualification remain future work.
 3. **POS and circuit checks** — POS presentation and broader circuit verification remain future work.
 
-The planned examples are a two-sensor interlock, one BCD-to-seven-segment output, and a threshold/alarm condition. They are separate from waveform processing, PCB/stock optimization, and agent audit tooling.
+The examples cover a two-sensor interlock, one BCD-to-seven-segment output, and a threshold/alarm condition. The project stays focused on Boolean logic and small gate-count estimates rather than waveform processing, PCB/stock optimization, or agent audit tooling.
 
 ## Project shape
 
