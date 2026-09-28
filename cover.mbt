@@ -312,3 +312,57 @@ test "selected cubes cover required rows and avoid required zeroes" {
     }
   }
 }
+
+///|
+test "three-input covers match an exhaustive prime-subset oracle" {
+  for truth_bits in 0..<256 {
+    let on_set : Array[Int] = []
+    for row in 0..<8 {
+      if ((truth_bits >> row) & 1) == 1 {
+        on_set.push(row)
+      }
+    }
+    let spec = match TruthSpec::new(3, on_set, []) {
+      Some(spec) => spec
+      None => fail("generated truth table was rejected")
+    }
+    let primes = refine(spec).primes
+    let solution = minimize_sop(spec)
+    let mut best_terms = 2147483647
+    let mut best_literals = 2147483647
+    for subset in 0..<(1 << primes.length()) {
+      let selected : Array[Cube] = []
+      for index in 0..<primes.length() {
+        if ((subset >> index) & 1) == 1 {
+          selected.push(primes[index])
+        }
+      }
+      let mut equivalent = true
+      for row in 0..<8 {
+        let mut actual = false
+        for cube in selected {
+          if cube.covers_row(row) {
+            actual = true
+          }
+        }
+        if actual != (((truth_bits >> row) & 1) == 1) {
+          equivalent = false
+        }
+      }
+      if equivalent {
+        let terms = selected.length()
+        let mut actual_literals = 0
+        for cube in selected {
+          actual_literals += cube.literal_count()
+        }
+        if terms < best_terms ||
+          (terms == best_terms && actual_literals < best_literals) {
+          best_terms = terms
+          best_literals = actual_literals
+        }
+      }
+    }
+    assert_eq(solution.term_count, best_terms)
+    assert_eq(solution.literal_count, best_literals)
+  }
+}
