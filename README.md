@@ -31,13 +31,17 @@ estimate for SN74HC04/08/32. Device assumptions and full truth tables are in
 [`circuits/WORKED.md`](circuits/WORKED.md); the sourced catalog is described in
 [`parts/74hc-catalog.md`](parts/74hc-catalog.md).
 
+## Implemented milestones
+
+1. **Truth-table refinement and SOP cover** — explicit validation, coverage chart, essential implicants, and deterministic exact selection.
+2. **Bench planning** — two-level gate estimates, a TI-sourced 74HC catalog, and three circuit examples with independent truth-table checks.
+
 ## Planned work
 
-1. **Truth-table refinement and SOP cover** — implemented with explicit validation, coverage chart, essentials, and deterministic exact selection.
-2. **Bench planning** — documented two-level gate estimates, TI-sourced 74HC channel counts, and three verified circuit examples are implemented. Pin-level wiring and electrical qualification remain future work.
-3. **POS and circuit checks** — POS presentation and broader circuit verification remain future work.
+1. Add POS presentation and tests without changing the current SOP contract.
+2. Add pin-level wiring guidance only for exact device variants after datasheet review; physical qualification remains out of scope until actually performed.
 
-The examples cover a two-sensor interlock, one BCD-to-seven-segment output, and a threshold/alarm condition. The project stays focused on Boolean logic and small gate-count estimates rather than waveform processing, PCB/stock optimization, or agent audit tooling.
+The examples cover a two-sensor interlock, one BCD-to-seven-segment output, and a threshold/alarm condition.
 
 ## Project shape
 

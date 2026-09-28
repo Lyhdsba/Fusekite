@@ -25,6 +25,11 @@ commit history and this record should be read together.
 | `39c7f60` | CI, runnable examples, and Mooncakes metadata | The first remote CI run exposed newer-compiler warnings in black-box tests. |
 | `22e87cd` | Qualified black-box test references for current MoonBit | Remote CI passed after this fix. |
 | `7e3a72a` | Integer-overflow guard and sparse eight-input boundary cases | 22 tests passed locally and [remote CI passed](https://github.com/Lyhdsba/Fusekite/actions/runs/36376524489). |
+| `62e6c5c` | Disclosed substantial AI assistance and recorded owner-review items | The review checklist remains open; no manual or hardware review is claimed. |
+| `c963a0a` | Pinned CI runner and Node-compatible checkout action | [Remote CI passed](https://github.com/Lyhdsba/Fusekite/actions/runs/36376743147). |
+| `6f60cc2` | Added the competition proposal with AI contribution disclosure | Removed personal contact details from the public copy; [remote CI passed](https://github.com/Lyhdsba/Fusekite/actions/runs/36399790990). |
+| `7427929` | Snapshotted caller-owned truth-table arrays during validation | Added a regression test; 23 tests passed and [remote CI passed](https://github.com/Lyhdsba/Fusekite/actions/runs/36408528637). |
+| `0dd93e0` | Hid validated row arrays and exposed defensive-copy accessors | Added a cross-package mutation regression; 23 tests and local format, check, build, demo, docs, and package checks passed before push. |
 
 These entries describe commits and checks that exist. They are not a diary and
 do not represent unrecorded manual review.

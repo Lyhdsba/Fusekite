@@ -23,8 +23,8 @@ Covers are ranked by fewest product terms, then fewest total literals, then the 
 ## Decision points for later increments
 
 - Add POS rendering without changing the current SOP contract.
-- Device-level costs should come from an explicit, versioned part catalog rather than guessed datasheet values.
-- Example circuits will state their assumptions and show how to verify them against a physical part's datasheet.
+- Explore NAND/NOR technology mapping only with a separately documented cost and verification model.
+- Add pin-level wiring guidance only after selecting exact orderable device variants and reviewing their current datasheets.
 
 ## Two-level gate-count estimate
 
