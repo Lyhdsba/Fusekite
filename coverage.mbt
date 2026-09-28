@@ -61,14 +61,24 @@ pub fn make_coverage_chart(
 /// Return every prime implicant that is the sole coverer of at least one
 /// required minterm. The result follows the chart's deterministic pattern
 /// order and contains no duplicates.
-pub fn CoverageChart::essential_implicants(self : CoverageChart) -> Array[Cube] {
-  let essential : Array[Cube] = []
+pub fn CoverageChart::essential_indices(self : CoverageChart) -> Array[Int] {
+  let essential : Array[Int] = []
   for coverers in self.coverers {
     if coverers.length() == 1 {
-      append_unique(essential, self.primes[coverers[0]])
+      let index = coverers[0]
+      if !essential.contains(index) {
+        essential.push(index)
+      }
     }
   }
   essential
+}
+
+///|
+/// Return every prime implicant that uniquely covers at least one required
+/// minterm, in the chart's deterministic pattern order.
+pub fn CoverageChart::essential_implicants(self : CoverageChart) -> Array[Cube] {
+  self.essential_indices().map(index => self.primes[index])
 }
 
 ///|
