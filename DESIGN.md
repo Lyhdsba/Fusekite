@@ -16,6 +16,6 @@ The first stage stops at prime implicants. It does not yet choose a cover, claim
 ## Decision points for later increments
 
 - The cover solver must preserve every required one while never covering a required zero.
-- Tie-breaking between equally small covers must be deterministic and documented.
+- Covers are ordered by fewest product terms, then fewest total literals, then the lexicographically smallest sorted pattern list, with `- < 0 < 1`.
 - Device-level costs should come from an explicit, versioned part catalog rather than guessed datasheet values.
 - Example circuits will state their assumptions and show how to verify them against a physical part's datasheet.

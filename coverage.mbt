@@ -58,6 +58,20 @@ pub fn make_coverage_chart(
 }
 
 ///|
+/// Return every prime implicant that is the sole coverer of at least one
+/// required minterm. The result follows the chart's deterministic pattern
+/// order and contains no duplicates.
+pub fn CoverageChart::essential_implicants(self : CoverageChart) -> Array[Cube] {
+  let essential : Array[Cube] = []
+  for coverers in self.coverers {
+    if coverers.length() == 1 {
+      append_unique(essential, self.primes[coverers[0]])
+    }
+  }
+  essential
+}
+
+///|
 test "coverage chart maps each required row to its prime implicants" {
   let spec = match TruthSpec::new(3, [7, 1, 5, 3], []) {
     Some(spec) => spec
@@ -79,4 +93,17 @@ test "coverage chart omits don't-care-only rows" {
   let chart = make_coverage_chart(spec, refine(spec))
   assert_eq(chart.minterms, [1])
   assert_eq(chart.coverers, [[0]])
+}
+
+///|
+test "essential implicants are the unique coverers of required rows" {
+  let spec = match TruthSpec::new(3, [0, 1, 6, 7], []) {
+    Some(spec) => spec
+    None => fail("valid truth table was rejected")
+  }
+  let chart = make_coverage_chart(spec, refine(spec))
+  let essential = chart.essential_implicants()
+  assert_eq(essential.length(), 2)
+  assert_eq(essential[0].pattern(), "00-")
+  assert_eq(essential[1].pattern(), "11-")
 }
