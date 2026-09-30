@@ -30,8 +30,9 @@ commit history and this record should be read together.
 | `6f60cc2` | Added the competition proposal with AI contribution disclosure | Removed personal contact details from the public copy; [remote CI passed](https://github.com/Lyhdsba/Fusekite/actions/runs/36399790990). |
 | `7427929` | Snapshotted caller-owned truth-table arrays during validation | Added a regression test; 23 tests passed and [remote CI passed](https://github.com/Lyhdsba/Fusekite/actions/runs/36408528637). |
 | `0dd93e0` | Hid validated row arrays and exposed defensive-copy accessors | Added a cross-package mutation regression; 23 tests and local format, check, build, demo, docs, and package checks passed before push. |
-| `a349dbc` | Added canonical ROBDD operations and BDD-based SOP verification | 28 tests passed; formatting, check, build, examples, docs, and package listing passed before push. |
-| `84eea16` | Added CNF normalization, Tseitin encoding, DIMACS parsing, and bounded DPLL | 40 tests passed, including exhaustive two-variable CNF and BDD cross-checks; local package checks passed before push. |
+| `a349dbc` | Added canonical ROBDD operations and BDD-based SOP verification | 28 tests passed; [remote CI passed](https://github.com/Lyhdsba/Fusekite/actions/runs/36678108262). |
+| `84eea16` | Added CNF normalization, Tseitin encoding, DIMACS parsing, and bounded DPLL | 35 tests in that revision; [remote CI passed](https://github.com/Lyhdsba/Fusekite/actions/runs/36679540370). |
+| `d1e88da` | Added two-watched propagation, SAT counterexample verification, and runnable DIMACS examples | 41 tests passed locally; [remote CI passed](https://github.com/Lyhdsba/Fusekite/actions/runs/36680024543). |
 
 This table records verifiable commits and checks. Automated results do not
 establish independent manual review, hardware correctness, or electrical
