@@ -8,6 +8,16 @@
 - Rows omitted from both sets are required zeroes.
 - `TruthSpec::new` copies both row arrays after validation. The stored arrays stay private; public accessors return copies so later caller mutations cannot invalidate the specification.
 
+## ROBDD manager
+
+- `BddManager` fixes a variable order at construction and supports 1–32 variables. Variable index 0 is the first decision level.
+- Node IDs 0 and 1 are the false and true terminals. Non-terminal IDs are local to one manager and must not be mixed with IDs from another manager.
+- `make_node` applies the reduction rule `low == high => low` and linearly searches the unique table for an existing `(variable, low, high)` triple.
+- AND, OR, and XOR use Shannon expansion in the fixed variable order. The apply cache memoizes canonicalized operand pairs, and complement results are memoized by node; all exposed operations check IDs before using them.
+- Equivalent functions built in the same manager reduce to the same node ID. `reachable_node_count` reports the final graph size; `node_count` reports all non-terminal nodes allocated during the manager lifetime, including intermediate nodes.
+- ROBDDs can be exponential in the worst case and the current unique/apply tables use linear lookup. This is a foundational symbolic Boolean package, not a SAT, BDD-optimized, or SMT solver, and no arbitrary-formula performance guarantee is made.
+- `verify_sop_with_bdd` builds a truth-table reference and a selected-cover graph, masks don't-care rows, and checks that their difference is false over every cared row. Circuit examples run this check alongside their explicit expected-output vectors.
+
 ## Refinement invariant
 
 A cube stores a value mask and a wildcard mask. Two cubes merge only when their wildcard masks match and exactly one specified bit differs. Each merge round keeps one copy of each resulting shape. A cube is reported as prime after a round in which it cannot merge further; don't-care-only cubes are excluded from the reported prime list.
@@ -23,6 +33,8 @@ Covers are ranked by fewest product terms, then fewest total literals, then the 
 ## Decision points for later increments
 
 - Add POS rendering without changing the current SOP contract.
+- Measure BDD table lookup and memory behavior on a published corpus before choosing a hash-based unique table or a SAT/CNF backend.
+- Define a bounded formula input language and independent solver oracle before claiming SAT support; z3 is a reference point, not an implemented dependency.
 - Explore NAND/NOR technology mapping only with a separately documented cost and verification model.
 - Add pin-level wiring guidance only after selecting exact orderable device variants and reviewing their current datasheets.
 

@@ -1,14 +1,14 @@
 # Fusekite
 
-**Truth table in. A small-gate estimate out.**
+**Boolean functions in. Canonical reasoning and a small-gate estimate out.**
 
-Fusekite is a MoonBit project for reducing small combinational circuits and, over time, turning the result into a practical gate-level plan for electronics labs. It focuses on the gap between a classroom Boolean expression and a circuit someone can wire with common 74HC parts.
+Fusekite is a MoonBit Boolean-reasoning and electronics-planning library. It combines a canonical ROBDD representation and Boolean operations with a bounded exact SOP minimizer and a transparent 74HC gate estimate. The BDD layer is a reusable symbolic foundation; the circuit planner remains deliberately small and educational.
 
 ## Current stage
 
-Fusekite validates a single-output truth table, builds deterministic Quine–McCluskey merge rounds and a minterm-to-prime chart, identifies essential implicants, and chooses an exact minimum SOP cover. Don't-care rows can help form implicants; a prime that covers only don't-care rows is left out. It also estimates a direct SOP gate count, maps that estimate to a small sourced 74HC catalog, and includes three worked circuit examples with independent truth-table checks.
+Fusekite provides a reduced ordered binary decision diagram (ROBDD) manager with a fixed variable order, unique-node reduction, memoized AND/OR/XOR application, complement, evaluation, and canonical equivalence checks. It can also independently check a selected SOP cover against a truth-table specification while masking don't-care rows. Alongside this foundation, Fusekite validates a single-output truth table, performs deterministic Quine–McCluskey refinement and exact minimum SOP selection, estimates direct SOP gate counts, and maps those estimates to a small sourced 74HC catalog.
 
-This scope is intentionally bounded to one output and at most eight inputs. Fusekite is an educational planning aid, not a substitute for datasheet checks, timing analysis, or electrical safety review.
+The truth-table minimizer is intentionally bounded to one output and at most eight inputs. The ROBDD manager accepts 1–32 variables, but ROBDD size can grow exponentially for some functions; it is not a SAT/SMT solver and does not promise resource-bounded solving for arbitrary formulas. Fusekite is an educational planning aid, not a substitute for datasheet checks, timing analysis, or electrical safety review.
 
 ## Example
 
@@ -18,6 +18,16 @@ For `F(A, B, C) = Σm(1, 3, 5, 7)`, the required rows all have `C = 1`. Fusekite
 let spec = TruthSpec::new(3, [1, 3, 5, 7], [])
 let solution = minimize_sop(spec.unwrap())
 println(solution.patterns()) // ["--1"]
+```
+
+The ROBDD API can also be used without creating a truth-table specification:
+
+```moonbit
+let manager = BddManager::new(2).unwrap()
+let a = manager.variable(0).unwrap()
+let b = manager.variable(1).unwrap()
+let both = manager.apply(BddOp::And, a, b).unwrap()
+manager.evaluate(both, [true, false]) // Some(false)
 ```
 
 Run all three electronics demonstrations with:
@@ -33,19 +43,21 @@ estimate for SN74HC04/08/32. Device assumptions and full truth tables are in
 
 ## Implemented milestones
 
-1. **Truth-table refinement and SOP cover** — explicit validation, coverage chart, essential implicants, and deterministic exact selection.
-2. **Bench planning** — two-level gate estimates, a TI-sourced 74HC catalog, and three circuit examples with independent truth-table checks.
+1. **Symbolic Boolean foundation** — canonical ROBDD nodes, reduction and memoized Boolean apply, complement, evaluation, and equivalence.
+2. **Truth-table refinement and SOP cover** — explicit validation, coverage chart, essential implicants, and deterministic exact selection, independently checked through BDDs.
+3. **Bench planning** — two-level gate estimates, a TI-sourced 74HC catalog, and three circuit examples with independent truth-table and BDD checks.
 
 ## Planned work
 
 1. Add POS presentation and tests without changing the current SOP contract.
-2. Add pin-level wiring guidance only for exact device variants after datasheet review; physical qualification remains out of scope until actually performed.
+2. Evaluate a SAT/CNF layer only after defining its input language, resource limits, and independent correctness oracle; no SAT/SMT solver is currently included.
+3. Add pin-level wiring guidance only for exact device variants after datasheet review; physical qualification remains out of scope until actually performed.
 
 The examples cover a two-sensor interlock, one BCD-to-seven-segment output, and a threshold/alarm condition.
 
 ## Project shape
 
-The core is a single root MoonBit package so the Boolean rules can be read in one place. `coverage.mbt` exposes row-to-prime relationships, `cover.mbt` contains exact selection, and `gate_cost.mbt` provides primitive counts. The `parts/` package contains a small sourced catalog; `circuits/` contains examples and independent checks; a small executable lives under `cmd/main`.
+The root MoonBit package contains the reusable ROBDD manager in `bdd.mbt`, truth-table refinement and cover selection in `fusekite.mbt`, `coverage.mbt`, and `cover.mbt`, and structural cost primitives in `gate_cost.mbt`. The `parts/` package contains a small sourced catalog; `circuits/` contains worked examples and independent truth-table/BDD checks; a small executable lives under `cmd/main`.
 
 ## Build and test
 
