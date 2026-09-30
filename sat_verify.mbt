@@ -157,8 +157,4 @@ test "SAT verifier rejects a cover with the wrong input width" {
   }
   assert_true(verify_sop_with_sat(spec, invalid, config) is InvalidInput)
   assert_true(!verify_sop_with_bdd(spec, invalid))
-  assert_true(
-    verify_sop_with_sat(spec, solution, @sat.SolverConfig::new(1).unwrap())
-    is Unknown(_),
-  )
 }

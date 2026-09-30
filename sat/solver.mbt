@@ -80,6 +80,13 @@ priv struct CnfEncoder {
   clauses : Array[Array[Int]]
   source_variable_count : Int
   mut expression_nodes : Int
+  expression_cache : Array[CnfCacheEntry]
+}
+
+///|
+priv struct CnfCacheEntry {
+  expression : BoolExpr
+  literal : Int
 }
 
 ///|
@@ -166,11 +173,37 @@ fn CnfEncoder::fresh_literal(self : CnfEncoder) -> Int? {
 }
 
 ///|
+fn same_bool_expr(left : BoolExpr, right : BoolExpr) -> Bool {
+  match (left, right) {
+    (Constant(left_value), Constant(right_value)) => left_value == right_value
+    (Variable(left_index), Variable(right_index)) => left_index == right_index
+    (Not(left_child), Not(right_child)) =>
+      same_bool_expr(left_child, right_child)
+    (And(left_first, left_second), And(right_first, right_second)) =>
+      same_bool_expr(left_first, right_first) &&
+      same_bool_expr(left_second, right_second)
+    (Or(left_first, left_second), Or(right_first, right_second)) =>
+      same_bool_expr(left_first, right_first) &&
+      same_bool_expr(left_second, right_second)
+    (Xor(left_first, left_second), Xor(right_first, right_second)) =>
+      same_bool_expr(left_first, right_first) &&
+      same_bool_expr(left_second, right_second)
+    _ => false
+  }
+}
+
+///|
 fn CnfEncoder::encode(
   self : CnfEncoder,
   expression : BoolExpr,
   depth : Int,
 ) -> Int? {
+  for index in 0..<self.expression_cache.length() {
+    let entry = self.expression_cache[index]
+    if same_bool_expr(entry.expression, expression) {
+      return Some(entry.literal)
+    }
+  }
   if depth > 1024 {
     return None
   }
@@ -178,7 +211,7 @@ fn CnfEncoder::encode(
   if self.expression_nodes > 100_000 {
     return None
   }
-  match expression {
+  let result = match expression {
     Constant(value) => {
       let literal = match self.fresh_literal() {
         Some(literal) => literal
@@ -250,17 +283,24 @@ fn CnfEncoder::encode(
       Some(result)
     }
   }
+  match result {
+    Some(literal) => {
+      self.expression_cache.push({ expression, literal, })
+      Some(literal)
+    }
+    None => None
+  }
 }
 
 ///|
 /// Compile an expression and assert that it is true.
 ///
 /// Variables in the expression are numbered 1 through `variable_count`.
-/// The encoder uses Tseitin definitions, so the generated CNF grows linearly
-/// with the expression tree rather than distributing into a potentially
-/// exponential DNF/CNF. Generated clauses and variables are validated by the
-/// same limits as directly constructed formulas. Expression nesting is capped
-/// at 1,024 levels to bound recursive encoding depth.
+/// The encoder uses Tseitin definitions and structurally shares repeated
+/// subexpressions rather than distributing into potentially exponential
+/// DNF/CNF. Generated clauses and variables are validated by the same limits
+/// as directly constructed formulas. Distinct expression nodes are capped at
+/// 100,000 and nesting at 1,024 levels.
 pub fn CnfFormula::from_expression(
   variable_count : Int,
   expression : BoolExpr,
@@ -273,6 +313,7 @@ pub fn CnfFormula::from_expression(
     clauses: [],
     source_variable_count: variable_count,
     expression_nodes: 0,
+    expression_cache: [],
   }
   let output = match encoder.encode(expression, 0) {
     Some(literal) => literal
@@ -987,4 +1028,19 @@ test "Tseitin encoding preserves Boolean expression truth tables" {
     }
   }
   assert_true(CnfFormula::from_expression(2, Variable(3)) is None)
+}
+
+///|
+test "Tseitin encoding shares repeated structural subexpressions" {
+  let mut expression = BoolExpr::Variable(1)
+  for _ in 0..<24 {
+    expression = BoolExpr::And(expression, expression)
+  }
+  let formula = CnfFormula::from_expression(1, expression).unwrap()
+  assert_eq(formula.variable_count(), 25)
+  match formula.solve(SolverConfig::new(100).unwrap()).outcome {
+    Satisfiable(model) => assert_true(model[0])
+    _ =>
+      fail("a repeated conjunction of one true variable should be satisfiable")
+  }
 }

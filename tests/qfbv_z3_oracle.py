@@ -8,13 +8,17 @@ from z3 import BitVec, BitVecVal, Solver, ULT, sat, unsat
 
 
 ROOT = Path(__file__).resolve().parents[1]
-EXPECTED_CASES = 5 * sum(1 << width for width in range(1, 9))
+EXPECTED_CASES = 7 * sum(1 << width for width in range(1, 9)) + 2 * 8
 
 
 def operation_value(operation: str, width: int, left: int, right: int) -> int:
     mask = (1 << width) - 1
     if operation == "add":
         return (left + right) & mask
+    if operation == "sub":
+        return (left - right) & mask
+    if operation == "mul":
+        return (left * right) & mask
     if operation == "and":
         return left & right
     if operation == "or":
@@ -54,18 +58,26 @@ def main() -> int:
         target = int(target_text)
         left = BitVec("x", width)
         right = BitVec("y", width)
-        expression = {
-            "add": left + right,
-            "and": left & right,
-            "or": left | right,
-            "xor": left ^ right,
-            "not": ~left,
-        }[operation]
         reference = Solver()
-        reference.add(expression == BitVecVal(target, width))
-        reference.add(ULT(left, right))
+        if operation == "slt":
+            reference.add((left < right) == (target == 1))
+        else:
+            expression = {
+                "add": left + right,
+                "sub": left - right,
+                "mul": left * right,
+                "and": left & right,
+                "or": left | right,
+                "xor": left ^ right,
+                "not": ~left,
+            }[operation]
+            reference.add(expression == BitVecVal(target, width))
+        if operation != "slt":
+            reference.add(ULT(left, right))
         expected = reference.check()
 
+        if expected not in (sat, unsat):
+            raise AssertionError(f"Z3 did not decide {line}: {expected}")
         if outcome == "UNKNOWN" or outcome == "INVALID":
             raise AssertionError(f"MoonBit backend did not decide {line}")
         if (outcome == "SAT") != (expected == sat):
@@ -75,8 +87,15 @@ def main() -> int:
 
         model_left = int(left_text)
         model_right = int(right_text)
-        concrete = operation_value(operation, width, model_left, model_right)
-        if concrete != target or not model_left < model_right:
+        if operation == "slt":
+            sign_bit = 1 << (width - 1)
+            signed_left = model_left - (1 << width) if model_left & sign_bit else model_left
+            signed_right = model_right - (1 << width) if model_right & sign_bit else model_right
+            valid_model = (signed_left < signed_right) == (target == 1)
+        else:
+            concrete = operation_value(operation, width, model_left, model_right)
+            valid_model = concrete == target and model_left < model_right
+        if not valid_model:
             raise AssertionError(f"MoonBit returned an invalid model: {line}")
         reference.push()
         reference.add(left == BitVecVal(model_left, width))

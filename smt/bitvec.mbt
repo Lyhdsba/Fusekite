@@ -160,6 +160,59 @@ pub fn BitVec::add_wrapping(self : BitVec, other : BitVec) -> BitVec? {
 }
 
 ///|
+/// Subtract modulo `2^width`; underflow is discarded.
+pub fn BitVec::subtract_wrapping(self : BitVec, other : BitVec) -> BitVec? {
+  if self.width != other.width {
+    return None
+  }
+  let bits : Array[@sat.BoolExpr] = []
+  let mut borrow = @sat.BoolExpr::Constant(false)
+  for index in 0..<self.width {
+    let difference = @sat.BoolExpr::Xor(
+      @sat.BoolExpr::Xor(self.bits[index], other.bits[index]),
+      borrow,
+    )
+    bits.push(difference)
+    let left_is_zero_right_one = @sat.BoolExpr::And(
+      @sat.BoolExpr::Not(self.bits[index]),
+      other.bits[index],
+    )
+    let equal_bits = @sat.BoolExpr::Not(
+      @sat.BoolExpr::Xor(self.bits[index], other.bits[index]),
+    )
+    borrow = @sat.BoolExpr::Or(
+      left_is_zero_right_one,
+      @sat.BoolExpr::And(equal_bits, borrow),
+    )
+  }
+  Some({ width: self.width, bits, })
+}
+
+///|
+/// Multiply modulo `2^width`; high product bits are discarded.
+pub fn BitVec::multiply_low(self : BitVec, other : BitVec) -> BitVec? {
+  if self.width != other.width {
+    return None
+  }
+  let mut product = BitVec::constant(self.width, 0).unwrap()
+  for shift in 0..<self.width {
+    let partial_bits : Array[@sat.BoolExpr] = []
+    for index in 0..<self.width {
+      if index < shift {
+        partial_bits.push(@sat.BoolExpr::Constant(false))
+      } else {
+        partial_bits.push(
+          @sat.BoolExpr::And(self.bits[index - shift], other.bits[shift]),
+        )
+      }
+    }
+    let partial = BitVec::{ width: self.width, bits: partial_bits, }
+    product = product.add_wrapping(partial).unwrap()
+  }
+  Some(product)
+}
+
+///|
 pub fn BitVec::equal(self : BitVec, other : BitVec) -> @sat.BoolExpr? {
   if self.width != other.width {
     return None
@@ -191,6 +244,29 @@ pub fn BitVec::unsigned_less_than(
     less = @sat.BoolExpr::Or(bit_less, @sat.BoolExpr::And(equal_bit, less))
   }
   Some(less)
+}
+
+///|
+/// Compare two's-complement signed values at the vectors' common width.
+pub fn BitVec::signed_less_than(
+  self : BitVec,
+  other : BitVec,
+) -> @sat.BoolExpr? {
+  if self.width != other.width {
+    return None
+  }
+  let left_sign = self.bits[self.width - 1]
+  let right_sign = other.bits[other.width - 1]
+  let signs_differ = @sat.BoolExpr::Xor(left_sign, right_sign)
+  let negative_less = @sat.BoolExpr::And(
+    left_sign,
+    @sat.BoolExpr::Not(right_sign),
+  )
+  let same_sign_less = @sat.BoolExpr::And(
+    @sat.BoolExpr::Not(signs_differ),
+    self.unsigned_less_than(other).unwrap(),
+  )
+  Some(@sat.BoolExpr::Or(negative_less, same_sign_less))
 }
 
 ///|
@@ -308,9 +384,12 @@ test "bit-vector operations reject width mismatches" {
   let narrow = BitVec::variable(2, 1).unwrap()
   let wide = BitVec::variable(3, 3).unwrap()
   assert_true(narrow.add_wrapping(wide) is None)
+  assert_true(narrow.subtract_wrapping(wide) is None)
+  assert_true(narrow.multiply_low(wide) is None)
   assert_true(narrow.bit_and(wide) is None)
   assert_true(narrow.equal(wide) is None)
   assert_true(narrow.unsigned_less_than(wide) is None)
+  assert_true(narrow.signed_less_than(wide) is None)
   assert_true(narrow.evaluate([true]) is None)
 }
 
@@ -348,6 +427,8 @@ test "two-bit bit-vector operators match exhaustive unsigned arithmetic" {
       let left = BitVec::constant(2, left_value).unwrap()
       let right = BitVec::constant(2, right_value).unwrap()
       let add_expected = BitVec::constant(2, (left_value + right_value) % 4).unwrap()
+      let sub_expected = BitVec::constant(2, (left_value - right_value + 4) % 4).unwrap()
+      let mul_expected = BitVec::constant(2, left_value * right_value % 4).unwrap()
       let and_expected = BitVec::constant(2, left_value & right_value).unwrap()
       let or_expected = BitVec::constant(2, left_value | right_value).unwrap()
       let xor_expected = BitVec::constant(2, left_value ^ right_value).unwrap()
@@ -358,6 +439,16 @@ test "two-bit bit-vector operators match exhaustive unsigned arithmetic" {
       assert_true(
         constant_assertion_is_sat(
           left.add_wrapping(right).unwrap().equal(add_expected).unwrap(),
+        ),
+      )
+      assert_true(
+        constant_assertion_is_sat(
+          left.subtract_wrapping(right).unwrap().equal(sub_expected).unwrap(),
+        ),
+      )
+      assert_true(
+        constant_assertion_is_sat(
+          left.multiply_low(right).unwrap().equal(mul_expected).unwrap(),
         ),
       )
       assert_true(
@@ -382,6 +473,21 @@ test "two-bit bit-vector operators match exhaustive unsigned arithmetic" {
       assert_eq(
         constant_assertion_is_sat(left.unsigned_less_than(right).unwrap()),
         left_value < right_value,
+      )
+      let signed_left = if left_value >= 2 {
+        left_value - 4
+      } else {
+        left_value
+      }
+      let signed_right = if right_value >= 2 {
+        right_value - 4
+      } else {
+        right_value
+      }
+      let signed_less = left.signed_less_than(right).unwrap()
+      assert_eq(
+        constant_assertion_is_sat(signed_less),
+        signed_left < signed_right,
       )
     }
   }

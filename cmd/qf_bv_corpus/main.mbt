@@ -10,16 +10,27 @@ fn emit_case(
   let expected = @smt.BitVec::constant(width, target).unwrap()
   let value = match operation {
     "add" => x.add_wrapping(y).unwrap()
+    "sub" => x.subtract_wrapping(y).unwrap()
+    "mul" => x.multiply_low(y).unwrap()
     "and" => x.bit_and(y).unwrap()
     "or" => x.bit_or(y).unwrap()
     "xor" => x.bit_xor(y).unwrap()
     "not" => x.bit_not()
+    "slt" => x
     _ => fail("unknown QF_BV oracle operation")
   }
-  let assertion = @sat.BoolExpr::And(
-    value.equal(expected).unwrap(),
-    x.unsigned_less_than(y).unwrap(),
-  )
+  let assertion = if operation == "slt" {
+    if target == 1 {
+      x.signed_less_than(y).unwrap()
+    } else {
+      @sat.BoolExpr::Not(x.signed_less_than(y).unwrap())
+    }
+  } else {
+    @sat.BoolExpr::And(
+      value.equal(expected).unwrap(),
+      x.unsigned_less_than(y).unwrap(),
+    )
+  }
   let problem = @smt.QfBvProblem::new(width * 2, assertion).unwrap()
   match problem.solve(config) {
     @smt.QfBvOutcome::Satisfiable(model) => {
@@ -39,12 +50,15 @@ fn emit_case(
 ///|
 fn main raise {
   let config = @sat.SolverConfig::new(100_000).unwrap()
-  let operations = ["add", "and", "or", "xor", "not"]
+  let operations = ["add", "sub", "mul", "and", "or", "xor", "not"]
   for width in 1..<9 {
     for operation in operations {
       for target in 0..<(1 << width) {
         emit_case(operation, width, target, config)
       }
+    }
+    for target in 0..<2 {
+      emit_case("slt", width, target, config)
     }
   }
 }
