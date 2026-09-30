@@ -36,6 +36,7 @@ commit history and this record should be read together.
 | `8cee460` | Corrected the recorded test count for the SAT milestone | [Remote CI passed](https://github.com/Lyhdsba/Fusekite/actions/runs/36680140854). |
 | `6b898bf` | Corrected the proposal's description of watched-literal propagation | 41 tests passed; [remote CI passed](https://github.com/Lyhdsba/Fusekite/actions/runs/36683796025). |
 | `649148b` | Added bounded QF_BV bit-vector operations lowered to the SAT backend | 48 tests passed; exhaustive two-bit operator checks; [remote CI passed](https://github.com/Lyhdsba/Fusekite/actions/runs/36685216612). |
+| `9c5016f` | Added a pinned Z3 differential corpus and made it part of CI | 2,550 bounded cases passed locally and in [remote CI](https://github.com/Lyhdsba/Fusekite/actions/runs/36685869093). |
 
 This table records verifiable commits and checks. Automated results do not
 establish independent manual review, hardware correctness, or electrical
