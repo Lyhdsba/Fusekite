@@ -426,3 +426,58 @@ test "ROBDD keeps parity compact beyond truth-table input range" {
   }
   assert_eq(manager.evaluate(parity, odd_values), Some(true))
 }
+
+///|
+test "ROBDD satisfiability agrees with the DPLL backend on every two-variable CNF" {
+  let clause_universe : Array[Array[Int]] = []
+  for code in 1..<9 {
+    let mut encoded = code
+    let clause : Array[Int] = []
+    for variable in 1..<=2 {
+      let state = encoded % 3
+      encoded /= 3
+      if state == 1 {
+        clause.push(variable)
+      } else if state == 2 {
+        clause.push(-variable)
+      }
+    }
+    clause_universe.push(clause)
+  }
+  let config = @sat.SolverConfig::new(100).unwrap()
+  for formula_bits in 0..<256 {
+    let clauses : Array[Array[Int]] = []
+    let manager = BddManager::new(2).unwrap()
+    let variable_a = manager.variable(0).unwrap()
+    let variable_b = manager.variable(1).unwrap()
+    let variables = [variable_a, variable_b]
+    let mut root = 1
+    for index in 0..<clause_universe.length() {
+      if ((formula_bits >> index) & 1) == 1 {
+        let clause = clause_universe[index]
+        clauses.push(clause)
+        let mut clause_root = 0
+        for literal in clause {
+          let variable = variables[Int::abs(literal) - 1]
+          let term = if literal > 0 {
+            variable
+          } else {
+            manager.negate(variable).unwrap()
+          }
+          clause_root = manager.apply(Or, clause_root, term).unwrap()
+        }
+        root = manager.apply(And, root, clause_root).unwrap()
+      }
+    }
+    let formula = @sat.CnfFormula::new(2, clauses).unwrap()
+    let report = formula.solve(config)
+    match report.outcome {
+      @sat.SatOutcome::Satisfiable(model) => {
+        assert_true(formula.accepts(model))
+        assert_true(root != 0)
+      }
+      @sat.SatOutcome::Unsatisfiable => assert_eq(root, 0)
+      @sat.SatOutcome::Unknown => fail("two-variable CNF exhausted its budget")
+    }
+  }
+}
