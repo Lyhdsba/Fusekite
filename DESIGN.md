@@ -27,6 +27,13 @@
 - Exhaustive tests compare all 256 CNFs over two variables to a truth-assignment oracle. Another 1,024 deterministic three-variable formulas are checked by full assignment enumeration. DIMACS parsing, malformed-input paths, and Tseitin encodings are covered; the two-variable CNFs are also cross-checked against ROBDD canonical roots. Circuit-level SAT verification queries for counterexamples and does not treat `Unknown` as proof.
 - `verify_sop_with_sat` compiles `(expected XOR selected_cover) AND care` to CNF. SAT returns the input portion of a counterexample model; UNSAT proves equivalence over cared rows; budget exhaustion and malformed covers remain distinct outcomes.
 
+## Bounded QF_BV front end
+
+- The `smt/` package models unsigned bit-vectors with widths from 1 through 8. Variable bits use consecutive source-variable IDs in least-significant-bit-first order; callers provide the total source-variable count when creating a problem.
+- Supported terms are constants, variables, bitwise NOT/AND/OR/XOR, addition modulo `2^width`, equality, and unsigned less-than. Binary operations reject mismatched widths. Results are lowered to the existing Boolean-expression AST and Tseitin CNF encoder; the DPLL backend returns source-variable values without its auxiliary variables. `BitVec::evaluate` converts a term under a source model back to an unsigned value and returns `None` for missing source assignments.
+- This is a bounded bit-blasting front end for a QF_BV fragment, not a native theory solver, SMT-LIB parser, or general-purpose SMT implementation. Signed arithmetic, multiplication, division, arrays, uninterpreted functions, and quantifiers are unsupported. The underlying DPLL search remains exponential and can return `Unknown` at its configured budget.
+- Tests check constructors and width mismatches, SAT/UNSAT/Unknown/invalid outcomes, a unique four-bit wraparound model, and every pair of two-bit operands for addition, bitwise operations, equality, and unsigned comparison against concrete arithmetic results.
+
 ## Refinement invariant
 
 A cube stores a value mask and a wildcard mask. Two cubes merge only when their wildcard masks match and exactly one specified bit differs. Each merge round keeps one copy of each resulting shape. A cube is reported as prime after a round in which it cannot merge further; don't-care-only cubes are excluded from the reported prime list.

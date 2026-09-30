@@ -57,14 +57,15 @@ functions, every two-variable CNF paired with a truth-assignment oracle and the
 ROBDD backend, 1,024 sampled three-variable CNFs checked against exhaustive
 assignments, DIMACS parser boundary cases, Tseitin truth-table checks, SAT
 counterexample checks for all worked circuits, arithmetic-limit checks for
-package rounding, and sparse eight-input cases. Passing automated checks does
-not establish electrical safety or prove that a person has reviewed the design.
+package rounding, sparse eight-input cases, and every two-bit operand pair
+checked against the bounded bit-vector operators. Passing automated checks
+does not establish electrical safety or prove that a person has reviewed the design.
 
 ## Validation scope
 
 The recorded checks cover software formatting, type checking, tests, builds,
-documentation, packaging, SAT/BDD software oracles, and the runnable examples.
-They do not claim an independent line-by-line review, external-solver
+documentation, packaging, SAT/BDD/QF_BV software oracles, and the runnable
+examples. They do not claim an independent line-by-line review, external-solver
 differential testing, physical or simulator testing, electrical qualification,
 or approval under a particular competition's AI-use rules.
 The submitter should be able to explain the minimization and tie-break rules,

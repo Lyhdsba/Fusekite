@@ -73,10 +73,36 @@ fn show_sat_examples() -> Unit raise {
 }
 
 ///|
+/// Solve one four-bit unsigned wraparound constraint through the QF_BV layer.
+fn show_qfbv_example() -> Unit {
+  let x = @smt.BitVec::variable(4, 1).unwrap()
+  let three = @smt.BitVec::constant(4, 3).unwrap()
+  let two = @smt.BitVec::constant(4, 2).unwrap()
+  let assertion = x.add_wrapping(three).unwrap().equal(two).unwrap()
+  let problem = @smt.QfBvProblem::new(4, assertion).unwrap()
+  println("\nBounded QF_BV demonstration")
+  match problem.solve(@sat.SolverConfig::new(10_000).unwrap()) {
+    @smt.QfBvOutcome::Satisfiable(model) => {
+      let mut value = 0
+      for index in 0..<4 {
+        if model[index] {
+          value = value | (1 << index)
+        }
+      }
+      println("four-bit x + 3 = 2 modulo 16; model x = \{value}")
+    }
+    @smt.QfBvOutcome::Unsatisfiable => println("unexpected QF_BV UNSAT result")
+    @smt.QfBvOutcome::Unknown => println("QF_BV search budget exhausted")
+    @smt.QfBvOutcome::InvalidInput => println("invalid QF_BV assertion")
+  }
+}
+
+///|
 /// Demonstrate three electronics examples and their structural package plans.
 fn main raise {
   show_example(@circuits.sensor_interlock())
   show_example(@circuits.bcd_segment_a())
   show_example(@circuits.majority_alarm())
   show_sat_examples()
+  show_qfbv_example()
 }

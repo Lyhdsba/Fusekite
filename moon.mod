@@ -23,4 +23,4 @@ keywords = [ "boolean-logic", "electronics", "logic-synthesis", "moonbit" ]
 
 preferred_target = "wasm"
 
-description = "Small-circuit Boolean minimization and 74HC gate planning in MoonBit"
+description = "Bounded Boolean and bit-vector reasoning with small-circuit planning in MoonBit"
