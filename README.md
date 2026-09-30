@@ -80,7 +80,7 @@ four-bit QF_BV wraparound constraint. Device assumptions and full truth tables a
 
 1. Add POS presentation and tests without changing the current SOP contract.
 2. Add conflict learning and measured branching heuristics only alongside independent regression oracles and a published formula set.
-3. Add differential checks against a separately installed reference solver such as Z3; external solver integration is not included in the current release.
+3. Extend the deterministic Z3 differential corpus beyond the current bounded operator and width matrix before adding more QF_BV constructs.
 4. Consider additional bit-vector operators only with width-boundary and independent semantic tests; the current front end does not implement full SMT.
 5. Add pin-level wiring guidance only for exact device variants after datasheet review; physical qualification remains out of scope until actually performed.
 
@@ -102,9 +102,20 @@ moon doc
 moon package --list
 ```
 
+The CI also runs a separate QF_BV differential check. To reproduce it locally,
+install Python 3.12, install the pinned test-only solver package, then run:
+
+```sh
+python -m pip install -r tests/requirements.txt
+python tests/qfbv_z3_oracle.py
+```
+
+This tooling is not a runtime dependency of the MoonBit library.
+
 The GitHub Actions workflow pins an Ubuntu LTS image and a Node 24-compatible
-checkout action, then runs formatting, check, tests, build, and the demo on
-pushes to `main` and pull requests.
+checkout action, then runs formatting, check, tests, build, examples, package
+validation, and the separate Z3 differential corpus on pushes to `main` and
+pull requests.
 
 See [DEVELOPMENT.md](DEVELOPMENT.md) for the AI contribution statement,
 reproducible checks, and validation limits.

@@ -43,7 +43,7 @@ qualification.
 
 ## Reproduce the automated checks
 
-With the MoonBit toolchain installed, run from the repository checkout:
+With the MoonBit toolchain and Python 3.12 installed, run from the repository checkout:
 
 ```sh
 moon fmt --check
@@ -53,24 +53,33 @@ moon build
 moon run cmd/main
 moon doc
 moon package --list
+python -m pip install -r tests/requirements.txt
+python tests/qfbv_z3_oracle.py
 ```
 
-At `649148b`, the suite contains 48 tests, including an exhaustive oracle for
-three-input Boolean functions, every two-variable CNF paired with a truth-assignment oracle and the
-ROBDD backend, 1,024 sampled three-variable CNFs checked against exhaustive
-assignments, DIMACS parser boundary cases, Tseitin truth-table checks, SAT
-counterexample checks for all worked circuits, arithmetic-limit checks for
-package rounding, sparse eight-input cases, and every two-bit operand pair
-checked against the bounded bit-vector operators. Passing automated checks
-does not establish electrical safety or prove that a person has reviewed the design.
+At `649148b`, the MoonBit suite contains 48 tests, including an exhaustive
+oracle for three-input Boolean functions, every two-variable CNF paired with a
+truth-assignment oracle and the ROBDD backend, 1,024 sampled three-variable
+CNFs checked against exhaustive assignments, DIMACS parser boundary cases,
+Tseitin truth-table checks, SAT counterexample checks for all worked circuits,
+arithmetic-limit checks for package rounding, sparse eight-input cases, and
+every two-bit operand pair checked against the bounded bit-vector operators.
+Passing automated checks does not establish electrical safety or prove that a
+person has reviewed the design.
+
+The separate Python check emits 2,550 deterministic QF_BV constraints across
+widths 1 through 8 and compares SAT status with the pinned Z3 reference. For
+satisfiable cases it checks the returned source assignment against concrete
+unsigned arithmetic and asks Z3 to validate the same model.
 
 ## Validation scope
 
 The recorded checks cover software formatting, type checking, tests, builds,
-documentation, packaging, SAT/BDD/QF_BV software oracles, and the runnable
-examples. They do not claim an independent line-by-line review, external-solver
-differential testing, physical or simulator testing, electrical qualification,
-or approval under a particular competition's AI-use rules.
+documentation, packaging, SAT/BDD/QF_BV software oracles, a bounded QF_BV
+differential corpus against Z3, and the runnable examples. They do not claim an
+independent line-by-line review, differential coverage of arbitrary SMT
+formulas, physical or simulator testing, electrical qualification, or approval
+under a particular competition's AI-use rules.
 The submitter should be able to explain the minimization and tie-break rules,
 reproduce the checks, and verify the exact selected device variants before
 making claims about hardware behavior.
