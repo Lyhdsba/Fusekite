@@ -18,6 +18,15 @@
 - ROBDDs can be exponential in the worst case and the current unique/apply tables use linear lookup. This is a foundational symbolic Boolean package, not a SAT, BDD-optimized, or SMT solver, and no arbitrary-formula performance guarantee is made.
 - `verify_sop_with_bdd` builds a truth-table reference and a selected-cover graph, masks don't-care rows, and checks that their difference is false over every cared row. Circuit examples run this check alongside their explicit expected-output vectors.
 
+## CNF and DPLL SAT package
+
+- The independent `sat/` package accepts variables numbered from 1 through 4,096. Formula construction rejects zero/out-of-range literals, copies caller data, sorts and deduplicates literals, removes tautologies and duplicate clauses, and preserves empty clauses as contradictions. Its DIMACS parser validates the `p cnf` header, integer bounds, zero-terminated clauses, declared clause count, and comments before returning a formula.
+- `BoolExpr` represents constants, variables, negation, AND, OR, and XOR. The Tseitin encoder allocates a fresh variable for each operation, emits equivalence clauses for that operation, and adds a unit clause requiring the root expression to be true. It caps source variables at 256, encoded variables at 4,096, and visited expression nodes at 100,000.
+- The solver uses deterministic DPLL with two watched literals per non-unit clause; unit clauses use one watcher. Assignments enter a propagation trail; only clauses watching a newly falsified literal are revisited, and each watcher moves to a non-false replacement when one exists. It branches on the first literal in the first unresolved clause and explores both values chronologically.
+- It returns a complete model, a proof of unsatisfiability, or `Unknown` when its caller-supplied search-node budget is exhausted. This baseline does not implement conflict analysis, learned clauses, non-chronological backtracking, activity heuristics, or SMT theories. Worst-case runtime remains exponential; no industrial-scale performance claim is made.
+- Exhaustive tests compare all 256 CNFs over two variables to a truth-assignment oracle. Another 1,024 deterministic three-variable formulas are checked by full assignment enumeration. DIMACS parsing, malformed-input paths, and Tseitin encodings are covered; the two-variable CNFs are also cross-checked against ROBDD canonical roots. Circuit-level SAT verification queries for counterexamples and does not treat `Unknown` as proof.
+- `verify_sop_with_sat` compiles `(expected XOR selected_cover) AND care` to CNF. SAT returns the input portion of a counterexample model; UNSAT proves equivalence over cared rows; budget exhaustion and malformed covers remain distinct outcomes.
+
 ## Refinement invariant
 
 A cube stores a value mask and a wildcard mask. Two cubes merge only when their wildcard masks match and exactly one specified bit differs. Each merge round keeps one copy of each resulting shape. A cube is reported as prime after a round in which it cannot merge further; don't-care-only cubes are excluded from the reported prime list.
@@ -33,8 +42,7 @@ Covers are ranked by fewest product terms, then fewest total literals, then the 
 ## Decision points for later increments
 
 - Add POS rendering without changing the current SOP contract.
-- Measure BDD table lookup and memory behavior on a published corpus before choosing a hash-based unique table or a SAT/CNF backend.
-- Define a bounded formula input language and independent solver oracle before claiming SAT support; z3 is a reference point, not an implemented dependency.
+- Add conflict learning, non-chronological backtracking, and branching heuristics only with separate benchmarks and differential tests against a pinned reference solver such as Z3.
 - Explore NAND/NOR technology mapping only with a separately documented cost and verification model.
 - Add pin-level wiring guidance only after selecting exact orderable device variants and reviewing their current datasheets.
 

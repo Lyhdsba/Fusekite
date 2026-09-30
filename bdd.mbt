@@ -302,6 +302,9 @@ pub fn BddManager::equivalent(
 /// Don't-care rows are masked from the comparison. This is a software-level
 /// equivalence check independent of the cover-selection search.
 pub fn verify_sop_with_bdd(spec : TruthSpec, solution : CoverSolution) -> Bool {
+  if !valid_solution_for_spec(spec, solution) {
+    return false
+  }
   let manager = match BddManager::new(spec.input_count) {
     Some(manager) => manager
     None => return false

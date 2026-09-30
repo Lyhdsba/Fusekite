@@ -27,9 +27,56 @@ fn show_example(example : @circuits.CircuitExample) -> Unit {
 }
 
 ///|
+/// Show the DIMACS parser and bounded SAT outcomes on tiny formulas.
+fn show_sat_examples() -> Unit raise {
+  let config = @sat.SolverConfig::new(10_000).unwrap()
+  let satisfiable = match
+    @sat.CnfFormula::parse_dimacs(
+      (
+        #| c x1 or x2; x3 follows if either x1 or x2 is false
+        #| p cnf 3 3
+        #| 1 2 0
+        #| -1 3 0
+        #| -2 3 0
+      ),
+    ) {
+    Ok(formula) => formula
+    Err(_) => fail("SAT demonstration DIMACS input is invalid")
+  }
+  let contradiction = match
+    @sat.CnfFormula::parse_dimacs(
+      (
+        #| p cnf 1 2
+        #| 1 0
+        #| -1 0
+      ),
+    ) {
+    Ok(formula) => formula
+    Err(_) => fail("UNSAT demonstration DIMACS input is invalid")
+  }
+  println("\nCNF / DPLL demonstrations")
+  match satisfiable.solve(config).outcome {
+    @sat.SatOutcome::Satisfiable(model) => {
+      let x1 = if model[0] { "1" } else { "0" }
+      let x2 = if model[1] { "1" } else { "0" }
+      let x3 = if model[2] { "1" } else { "0" }
+      println("SAT model (x1, x2, x3): " + x1 + ", " + x2 + ", " + x3)
+    }
+    @sat.SatOutcome::Unsatisfiable => println("unexpected UNSAT result")
+    @sat.SatOutcome::Unknown => println("search budget exhausted")
+  }
+  match contradiction.solve(config).outcome {
+    @sat.SatOutcome::Satisfiable(_) => println("unexpected SAT result")
+    @sat.SatOutcome::Unsatisfiable => println("contradictory units: UNSAT")
+    @sat.SatOutcome::Unknown => println("search budget exhausted")
+  }
+}
+
+///|
 /// Demonstrate three electronics examples and their structural package plans.
 fn main raise {
   show_example(@circuits.sensor_interlock())
   show_example(@circuits.bcd_segment_a())
   show_example(@circuits.majority_alarm())
+  show_sat_examples()
 }

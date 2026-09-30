@@ -2,13 +2,13 @@
 
 **Boolean functions in. Canonical reasoning and a small-gate estimate out.**
 
-Fusekite is a MoonBit Boolean-reasoning and electronics-planning library. It combines a canonical ROBDD representation and Boolean operations with a bounded exact SOP minimizer and a transparent 74HC gate estimate. The BDD layer is a reusable symbolic foundation; the circuit planner remains deliberately small and educational.
+Fusekite is a MoonBit Boolean-reasoning and electronics-planning library. It combines a canonical ROBDD, a bounded DPLL SAT backend with Tseitin CNF encoding, an exact small-table SOP minimizer, and transparent 74HC gate estimates. The symbolic layers can be used independently; the electronics planner is a tested application built on those foundations.
 
 ## Current stage
 
-Fusekite provides a reduced ordered binary decision diagram (ROBDD) manager with a fixed variable order, unique-node reduction, memoized AND/OR/XOR application, complement, evaluation, and canonical equivalence checks. It can also independently check a selected SOP cover against a truth-table specification while masking don't-care rows. Alongside this foundation, Fusekite validates a single-output truth table, performs deterministic Quine–McCluskey refinement and exact minimum SOP selection, estimates direct SOP gate counts, and maps those estimates to a small sourced 74HC catalog.
+Fusekite provides a reduced ordered binary decision diagram (ROBDD) manager with a fixed variable order, unique-node reduction, memoized AND/OR/XOR application, complement, evaluation, and canonical equivalence checks. Its `sat/` package validates and normalizes CNF, parses DIMACS files, encodes Boolean expression trees with Tseitin variables, and solves with deterministic DPLL unit propagation under an explicit search budget. A SAT-backed verifier can return a concrete counterexample when an SOP cover is wrong. Alongside these foundations, Fusekite validates a single-output truth table, performs deterministic Quine–McCluskey refinement and exact minimum SOP selection, estimates direct SOP gate counts, and maps those estimates to a sourced 74HC catalog.
 
-The truth-table minimizer is intentionally bounded to one output and at most eight inputs. The ROBDD manager accepts 1–32 variables, but ROBDD size can grow exponentially for some functions; it is not a SAT/SMT solver and does not promise resource-bounded solving for arbitrary formulas. Fusekite is an educational planning aid, not a substitute for datasheet checks, timing analysis, or electrical safety review.
+The truth-table minimizer is intentionally bounded to one output and at most eight inputs. The ROBDD manager accepts 1–32 variables, but BDD size can grow exponentially for some functions. The CNF solver accepts up to 4,096 variables, uses two-watched-literal propagation, and caps search at a caller-selected budget. It still uses chronological DPLL without conflict learning, CDCL, or SMT theories; hard formulas can return `Unknown` when the budget expires. Fusekite is an educational planning aid, not a substitute for datasheet checks, timing analysis, or electrical safety review.
 
 ## Example
 
@@ -30,6 +30,24 @@ let both = manager.apply(BddOp::And, a, b).unwrap()
 manager.evaluate(both, [true, false]) // Some(false)
 ```
 
+The SAT package accepts DIMACS text, clauses, or a Boolean expression tree:
+
+```moonbit
+let expr = @sat.BoolExpr::Xor(
+  @sat.BoolExpr::Variable(1),
+  @sat.BoolExpr::Variable(2),
+)
+let formula = @sat.CnfFormula::from_expression(2, expr).unwrap()
+let report = formula.solve(@sat.SolverConfig::new(10_000).unwrap())
+```
+
+For an existing DIMACS string, use
+`@sat.CnfFormula::parse_dimacs(text)`; malformed headers, literals, and clause
+counts return a typed error rather than a partial formula.
+
+`SatOutcome::Unknown` is a budget result, never an unsatisfiability claim. See
+[`DESIGN.md`](DESIGN.md) for the encoding and solver invariants.
+
 Run all three electronics demonstrations with:
 
 ```sh
@@ -37,27 +55,29 @@ moon run cmd/main
 ```
 
 The demo prints each selected cover, primitive gate count and a whole-package
-estimate for SN74HC04/08/32. Device assumptions and full truth tables are in
+estimate for SN74HC04/08/32, then parses and solves one DIMACS SAT example and
+one contradictory CNF. Device assumptions and full truth tables are in
 [`circuits/WORKED.md`](circuits/WORKED.md); the sourced catalog is described in
 [`parts/74hc-catalog.md`](parts/74hc-catalog.md).
 
 ## Implemented milestones
 
-1. **Symbolic Boolean foundation** — canonical ROBDD nodes, reduction and memoized Boolean apply, complement, evaluation, and equivalence.
-2. **Truth-table refinement and SOP cover** — explicit validation, coverage chart, essential implicants, and deterministic exact selection, independently checked through BDDs.
-3. **Bench planning** — two-level gate estimates, a TI-sourced 74HC catalog, and three circuit examples with independent truth-table and BDD checks.
+1. **Symbolic Boolean foundation** — canonical ROBDD operations and Tseitin CNF encoding with bounded DPLL SAT solving.
+2. **Truth-table refinement and SOP cover** — explicit validation, coverage chart, essential implicants, deterministic exact selection, and BDD/SAT equivalence checks.
+3. **Bench planning** — two-level gate estimates, a TI-sourced 74HC catalog, and three circuit examples with independent truth-table, BDD, and SAT checks.
 
 ## Planned work
 
 1. Add POS presentation and tests without changing the current SOP contract.
-2. Evaluate a SAT/CNF layer only after defining its input language, resource limits, and independent correctness oracle; no SAT/SMT solver is currently included.
-3. Add pin-level wiring guidance only for exact device variants after datasheet review; physical qualification remains out of scope until actually performed.
+2. Add conflict learning and measured branching heuristics only alongside independent regression oracles and a published formula set.
+3. Add differential checks against a separately installed reference solver such as Z3; external solver integration is not included in the current release.
+4. Add pin-level wiring guidance only for exact device variants after datasheet review; physical qualification remains out of scope until actually performed.
 
 The examples cover a two-sensor interlock, one BCD-to-seven-segment output, and a threshold/alarm condition.
 
 ## Project shape
 
-The root MoonBit package contains the reusable ROBDD manager in `bdd.mbt`, truth-table refinement and cover selection in `fusekite.mbt`, `coverage.mbt`, and `cover.mbt`, and structural cost primitives in `gate_cost.mbt`. The `parts/` package contains a small sourced catalog; `circuits/` contains worked examples and independent truth-table/BDD checks; a small executable lives under `cmd/main`.
+The root MoonBit package contains the reusable ROBDD manager in `bdd.mbt`, SAT-backed SOP verification in `sat_verify.mbt`, truth-table refinement and cover selection in `fusekite.mbt`, `coverage.mbt`, and `cover.mbt`, and structural cost primitives in `gate_cost.mbt`. The independent `sat/` package contains validated CNF, the Boolean-expression Tseitin encoder, and the DPLL solver. The `parts/` package contains a sourced catalog; `circuits/` contains worked examples with independent truth-table, BDD, and SAT checks; a small executable lives under `cmd/main`.
 
 ## Build and test
 

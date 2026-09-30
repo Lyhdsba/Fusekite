@@ -1,4 +1,5 @@
 import {
   "Lyhdsba/fusekite",
   "Lyhdsba/fusekite/parts",
+  "Lyhdsba/fusekite/sat",
 }

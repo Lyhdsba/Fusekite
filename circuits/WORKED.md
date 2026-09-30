@@ -52,4 +52,6 @@ OR2 gates: one SN74HC08 and one SN74HC32 package.
 
 Each worked case has a separately written expected output vector in
 `examples.mbt`; the tests compare the minimized cover against that vector,
-including all specified zero rows and excluding only the BCD don't-cares.
+including all specified zero rows and excluding only the BCD don't-cares. Each
+example also runs ROBDD equivalence and a SAT counterexample query; only a
+proved-UNSAT mismatch query is recorded as equivalent.

@@ -64,6 +64,10 @@ pub struct SatReport {
 
 ///|
 priv struct SearchState {
+  clauses : Array[Array[Int]]
+  watch_lists : Array[Array[Int]]
+  watch0 : Array[Int]
+  watch1 : Array[Int]
   mut search_nodes : Int
   mut decisions : Int
   mut propagations : Int
@@ -162,7 +166,14 @@ fn CnfEncoder::fresh_literal(self : CnfEncoder) -> Int? {
 }
 
 ///|
-fn CnfEncoder::encode(self : CnfEncoder, expression : BoolExpr) -> Int? {
+fn CnfEncoder::encode(
+  self : CnfEncoder,
+  expression : BoolExpr,
+  depth : Int,
+) -> Int? {
+  if depth > 1024 {
+    return None
+  }
   self.expression_nodes += 1
   if self.expression_nodes > 100_000 {
     return None
@@ -182,13 +193,13 @@ fn CnfEncoder::encode(self : CnfEncoder, expression : BoolExpr) -> Int? {
       } else {
         Some(index)
       }
-    Not(child) => self.encode(child).map(literal => -literal)
+    Not(child) => self.encode(child, depth + 1).map(literal => -literal)
     And(left, right) => {
-      let left_literal = match self.encode(left) {
+      let left_literal = match self.encode(left, depth + 1) {
         Some(literal) => literal
         None => return None
       }
-      let right_literal = match self.encode(right) {
+      let right_literal = match self.encode(right, depth + 1) {
         Some(literal) => literal
         None => return None
       }
@@ -202,11 +213,11 @@ fn CnfEncoder::encode(self : CnfEncoder, expression : BoolExpr) -> Int? {
       Some(result)
     }
     Or(left, right) => {
-      let left_literal = match self.encode(left) {
+      let left_literal = match self.encode(left, depth + 1) {
         Some(literal) => literal
         None => return None
       }
-      let right_literal = match self.encode(right) {
+      let right_literal = match self.encode(right, depth + 1) {
         Some(literal) => literal
         None => return None
       }
@@ -220,11 +231,11 @@ fn CnfEncoder::encode(self : CnfEncoder, expression : BoolExpr) -> Int? {
       Some(result)
     }
     Xor(left, right) => {
-      let left_literal = match self.encode(left) {
+      let left_literal = match self.encode(left, depth + 1) {
         Some(literal) => literal
         None => return None
       }
-      let right_literal = match self.encode(right) {
+      let right_literal = match self.encode(right, depth + 1) {
         Some(literal) => literal
         None => return None
       }
@@ -248,7 +259,8 @@ fn CnfEncoder::encode(self : CnfEncoder, expression : BoolExpr) -> Int? {
 /// The encoder uses Tseitin definitions, so the generated CNF grows linearly
 /// with the expression tree rather than distributing into a potentially
 /// exponential DNF/CNF. Generated clauses and variables are validated by the
-/// same limits as directly constructed formulas.
+/// same limits as directly constructed formulas. Expression nesting is capped
+/// at 1,024 levels to bound recursive encoding depth.
 pub fn CnfFormula::from_expression(
   variable_count : Int,
   expression : BoolExpr,
@@ -262,7 +274,7 @@ pub fn CnfFormula::from_expression(
     source_variable_count: variable_count,
     expression_nodes: 0,
   }
-  let output = match encoder.encode(expression) {
+  let output = match encoder.encode(expression, 0) {
     Some(literal) => literal
     None => return None
   }
@@ -417,50 +429,143 @@ fn literal_is_satisfied(literal : Int, assignment : Array[Int]) -> Bool {
 }
 
 ///|
-fn propagate_units(
-  clauses : Array[Array[Int]],
+fn watch_index(literal : Int) -> Int {
+  let base = (Int::abs(literal) - 1) * 2
+  if literal > 0 {
+    base
+  } else {
+    base + 1
+  }
+}
+
+///|
+fn enqueue_literal(
+  literal : Int,
   assignment : Array[Int],
-  state : SearchState,
+  trail : Array[Int],
 ) -> Bool {
-  let mut changed = true
-  while changed {
-    changed = false
-    for clause in clauses {
-      let mut satisfied = false
-      let mut unassigned_count = 0
-      let mut last_unassigned = 0
-      for literal in clause {
-        let value = assignment[Int::abs(literal) - 1]
-        if literal_is_satisfied(literal, assignment) {
-          satisfied = true
-        } else if value == -1 {
-          unassigned_count += 1
-          last_unassigned = literal
-        }
+  let variable = Int::abs(literal) - 1
+  let required_value = if literal > 0 { 1 } else { 0 }
+  if assignment[variable] == -1 {
+    assignment[variable] = required_value
+    trail.push(literal)
+    true
+  } else {
+    assignment[variable] == required_value
+  }
+}
+
+///|
+fn initialize_watches(
+  state : SearchState,
+  assignment : Array[Int],
+  trail : Array[Int],
+) -> Bool {
+  for clause_index in 0..<state.clauses.length() {
+    let clause = state.clauses[clause_index]
+    if clause.length() == 0 {
+      state.conflicts += 1
+      return false
+    }
+    state.watch0.push(0)
+    state.watch1.push(if clause.length() == 1 { 0 } else { 1 })
+    state.watch_lists[watch_index(clause[0])].push(clause_index)
+    if clause.length() > 1 {
+      state.watch_lists[watch_index(clause[1])].push(clause_index)
+    } else if !enqueue_literal(clause[0], assignment, trail) {
+      state.conflicts += 1
+      return false
+    } else {
+      state.propagations += 1
+    }
+  }
+  true
+}
+
+///|
+fn propagate_watched(
+  state : SearchState,
+  assignment : Array[Int],
+  trail : Array[Int],
+  qhead : Int,
+) -> (Bool, Int) {
+  let mut queue_head = qhead
+  while queue_head < trail.length() {
+    let false_literal = -trail[queue_head]
+    let false_watch_index = watch_index(false_literal)
+    let current_watchers = state.watch_lists[false_watch_index].copy()
+    let remaining_watchers : Array[Int] = []
+    let mut conflict = false
+    for clause_index in current_watchers {
+      let clause = state.clauses[clause_index]
+      let old_watch0 = state.watch0[clause_index]
+      let old_watch1 = state.watch1[clause_index]
+      let false_slot = if clause[old_watch0] == false_literal {
+        Some(0)
+      } else if clause[old_watch1] == false_literal {
+        Some(1)
+      } else {
+        None
       }
-      if !satisfied {
-        if unassigned_count == 0 {
-          state.conflicts += 1
-          return false
-        }
-        if unassigned_count == 1 {
-          let variable = Int::abs(last_unassigned) - 1
-          let required_value = if last_unassigned > 0 { 1 } else { 0 }
-          if assignment[variable] != -1 &&
-            assignment[variable] != required_value {
-            state.conflicts += 1
-            return false
-          }
-          if assignment[variable] == -1 {
-            assignment[variable] = required_value
-            state.propagations += 1
-            changed = true
+      match false_slot {
+        None => ()
+        Some(slot) => {
+          let false_position = if slot == 0 { old_watch0 } else { old_watch1 }
+          let other_position = if slot == 0 { old_watch1 } else { old_watch0 }
+          let other_literal = clause[other_position]
+          if literal_is_satisfied(other_literal, assignment) {
+            remaining_watchers.push(clause_index)
+          } else {
+            let mut replacement : Int? = None
+            for position in 0..<clause.length() {
+              if position != false_position && position != other_position {
+                let candidate = clause[position]
+                let value = assignment[Int::abs(candidate) - 1]
+                if value == -1 || literal_is_satisfied(candidate, assignment) {
+                  if replacement is None {
+                    replacement = Some(position)
+                  }
+                }
+              }
+            }
+            match replacement {
+              Some(position) => {
+                if slot == 0 {
+                  state.watch0[clause_index] = position
+                } else {
+                  state.watch1[clause_index] = position
+                }
+                let replacement_literal = clause[position]
+                state.watch_lists[watch_index(replacement_literal)].push(
+                  clause_index,
+                )
+              }
+              None => {
+                remaining_watchers.push(clause_index)
+                let other_value = assignment[Int::abs(other_literal) - 1]
+                if other_value == -1 {
+                  if enqueue_literal(other_literal, assignment, trail) {
+                    state.propagations += 1
+                  } else {
+                    conflict = true
+                  }
+                } else if !literal_is_satisfied(other_literal, assignment) {
+                  conflict = true
+                }
+              }
+            }
           }
         }
       }
     }
+    state.watch_lists[false_watch_index] = remaining_watchers
+    queue_head += 1
+    if conflict {
+      state.conflicts += 1
+      return (false, queue_head)
+    }
   }
-  true
+  (true, queue_head)
 }
 
 ///|
@@ -493,19 +598,23 @@ fn complete_model(assignment : Array[Int]) -> Array[Bool] {
 
 ///|
 fn search(
-  clauses : Array[Array[Int]],
-  assignment : Array[Int],
   state : SearchState,
+  assignment : Array[Int],
+  trail : Array[Int],
+  qhead : Int,
   max_search_nodes : Int,
 ) -> SearchResult {
   if state.search_nodes >= max_search_nodes {
     return BudgetExhausted
   }
   state.search_nodes += 1
-  if !propagate_units(clauses, assignment, state) {
+  let (consistent, next_qhead) = propagate_watched(
+    state, assignment, trail, qhead,
+  )
+  if !consistent {
     return ProvedUnsat
   }
-  let branch_literal = match first_open_literal(clauses, assignment) {
+  let branch_literal = match first_open_literal(state.clauses, assignment) {
     Some(literal) => literal
     None => return Found(complete_model(assignment))
   }
@@ -513,15 +622,24 @@ fn search(
   state.decisions += 1
 
   let first_assignment = assignment.copy()
+  let first_trail = trail.copy()
   first_assignment[variable] = if branch_literal > 0 { 1 } else { 0 }
-  let first_result = search(clauses, first_assignment, state, max_search_nodes)
+  first_trail.push(branch_literal)
+  let first_result = search(
+    state, first_assignment, first_trail, next_qhead, max_search_nodes,
+  )
   match first_result {
     Found(model) => return Found(model)
     ProvedUnsat => ()
     BudgetExhausted => {
       let second_assignment = assignment.copy()
+      let second_trail = trail.copy()
       second_assignment[variable] = if branch_literal > 0 { 0 } else { 1 }
-      return match search(clauses, second_assignment, state, max_search_nodes) {
+      second_trail.push(-branch_literal)
+      return match
+        search(
+          state, second_assignment, second_trail, next_qhead, max_search_nodes,
+        ) {
         Found(model) => Found(model)
         ProvedUnsat => BudgetExhausted
         BudgetExhausted => BudgetExhausted
@@ -530,30 +648,41 @@ fn search(
   }
 
   let second_assignment = assignment.copy()
+  let second_trail = trail.copy()
   second_assignment[variable] = if branch_literal > 0 { 0 } else { 1 }
-  search(clauses, second_assignment, state, max_search_nodes)
+  second_trail.push(-branch_literal)
+  search(state, second_assignment, second_trail, next_qhead, max_search_nodes)
 }
 
 ///|
-/// Solve a CNF formula using deterministic DPLL with repeated unit propagation.
+/// Solve a CNF formula using deterministic DPLL with two-watched-literal
+/// propagation.
 ///
 /// Branching uses the first unassigned literal in the first unresolved clause.
 /// The solver returns a complete Boolean model on SAT and `Unknown` if the
 /// configured search-node budget is exhausted before a proof is found.
 pub fn CnfFormula::solve(self : CnfFormula, config : SolverConfig) -> SatReport {
   let assignment : Array[Int] = Array::make(self.variable_count, -1)
+  let trail : Array[Int] = []
+  let watch_lists : Array[Array[Int]] = []
+  for _ in 0..<(self.variable_count * 2) {
+    watch_lists.push([])
+  }
   let state = SearchState::{
+    clauses: self.clauses,
+    watch_lists,
+    watch0: [],
+    watch1: [],
     search_nodes: 0,
     decisions: 0,
     propagations: 0,
     conflicts: 0,
   }
-  let search_result = search(
-    self.clauses,
-    assignment,
-    state,
-    config.max_search_nodes,
-  )
+  let search_result = if initialize_watches(state, assignment, trail) {
+    search(state, assignment, trail, 0, config.max_search_nodes)
+  } else {
+    ProvedUnsat
+  }
   let outcome = match search_result {
     Found(model) => Satisfiable(model)
     ProvedUnsat => Unsatisfiable
@@ -598,7 +727,7 @@ test "CNF validates bounds and owns normalized clause data" {
   assert_true(CnfFormula::new(2, [[0]]) is None)
   assert_true(CnfFormula::new(2, [[3]]) is None)
   assert_true(SolverConfig::new(0) is None)
-  let input : Array[Array[Int]] = [[2, 1, 2], [1, -1], [-2, -2]]
+  let input : Array[Array[Int]] = [[2, 1, 2], [1, -1], [-2, -2], [1, 2]]
   let formula = CnfFormula::new(2, input).unwrap()
   input[0].push(-2)
   assert_eq(formula.clauses(), [[1, 2], [-2]])
@@ -650,6 +779,12 @@ test "DPLL handles empty formulas contradictions and unit chains" {
   }
   let contradiction = CnfFormula::new(1, [[]]).unwrap()
   assert_true(contradiction.solve(config).outcome is Unsatisfiable)
+  assert_true(
+    CnfFormula::new(0, []).unwrap().solve(config).outcome is Satisfiable(_),
+  )
+  assert_true(
+    CnfFormula::new(0, [[]]).unwrap().solve(config).outcome is Unsatisfiable,
+  )
   let chain = CnfFormula::new(3, [[1], [-1, 2], [-2, 3]]).unwrap()
   let result = chain.solve(config)
   match result.outcome {
@@ -657,6 +792,21 @@ test "DPLL handles empty formulas contradictions and unit chains" {
     _ => fail("unit chain should be satisfiable")
   }
   assert_eq(result.stats.propagations, 3)
+}
+
+///|
+test "two-watched literals move across falsified positions before unit propagation" {
+  let formula = CnfFormula::new(4, [[1, 2, 3, 4], [-1], [-2], [-3]]).unwrap()
+  let report = formula.solve(SolverConfig::new(100).unwrap())
+  match report.outcome {
+    Satisfiable(model) => {
+      assert_eq(model, [false, false, false, true])
+      assert_true(formula.accepts(model))
+    }
+    _ => fail("the final watched literal should be propagated")
+  }
+  assert_eq(report.stats.decisions, 0)
+  assert_eq(report.stats.propagations, 4)
 }
 
 ///|

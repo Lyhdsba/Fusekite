@@ -30,6 +30,8 @@ commit history and this record should be read together.
 | `6f60cc2` | Added the competition proposal with AI contribution disclosure | Removed personal contact details from the public copy; [remote CI passed](https://github.com/Lyhdsba/Fusekite/actions/runs/36399790990). |
 | `7427929` | Snapshotted caller-owned truth-table arrays during validation | Added a regression test; 23 tests passed and [remote CI passed](https://github.com/Lyhdsba/Fusekite/actions/runs/36408528637). |
 | `0dd93e0` | Hid validated row arrays and exposed defensive-copy accessors | Added a cross-package mutation regression; 23 tests and local format, check, build, demo, docs, and package checks passed before push. |
+| `a349dbc` | Added canonical ROBDD operations and BDD-based SOP verification | 28 tests passed; formatting, check, build, examples, docs, and package listing passed before push. |
+| `84eea16` | Added CNF normalization, Tseitin encoding, DIMACS parsing, and bounded DPLL | 40 tests passed, including exhaustive two-variable CNF and BDD cross-checks; local package checks passed before push. |
 
 This table records verifiable commits and checks. Automated results do not
 establish independent manual review, hardware correctness, or electrical
@@ -50,16 +52,20 @@ moon package --list
 ```
 
 The current test suite includes an exhaustive oracle for three-input Boolean
-functions, the three circuit truth tables, arithmetic-limit checks for package
-rounding, and sparse eight-input cases. Passing automated checks does not
-establish electrical safety or prove that a person has reviewed the design.
+functions, every two-variable CNF paired with a truth-assignment oracle and the
+ROBDD backend, 1,024 sampled three-variable CNFs checked against exhaustive
+assignments, DIMACS parser boundary cases, Tseitin truth-table checks, SAT
+counterexample checks for all worked circuits, arithmetic-limit checks for
+package rounding, and sparse eight-input cases. Passing automated checks does
+not establish electrical safety or prove that a person has reviewed the design.
 
 ## Validation scope
 
 The recorded checks cover software formatting, type checking, tests, builds,
-documentation, packaging, and the runnable examples. They do not claim an
-independent line-by-line review, physical or simulator testing, electrical
-qualification, or approval under a particular competition's AI-use rules.
+documentation, packaging, SAT/BDD software oracles, and the runnable examples.
+They do not claim an independent line-by-line review, external-solver
+differential testing, physical or simulator testing, electrical qualification,
+or approval under a particular competition's AI-use rules.
 The submitter should be able to explain the minimization and tie-break rules,
 reproduce the checks, and verify the exact selected device variants before
 making claims about hardware behavior.

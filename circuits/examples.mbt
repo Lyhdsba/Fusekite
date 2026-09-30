@@ -118,6 +118,14 @@ test "interlock cover matches all independently listed rows" {
   assert_eq(solution.patterns(), ["11"])
   assert_true(example.verify_cover(solution))
   assert_true(@fusekite.verify_sop_with_bdd(example.spec, solution))
+  assert_true(
+    @fusekite.verify_sop_with_sat(
+      example.spec,
+      solution,
+      @sat.SolverConfig::new(100_000).unwrap(),
+    )
+    is @fusekite.SatEquivalence::Equivalent,
+  )
   let cost = @fusekite.estimate_sop_gate_cost(example.spec, solution)
   let packages = @parts.estimate_74hc_packages(cost)
   assert_eq(packages.and_packages, 1)
@@ -135,6 +143,14 @@ test "BCD segment cover matches all valid digits and skips invalid BCD" {
   assert_eq(solution.patterns(), ["--1-", "-0-0", "-1-1", "1---"])
   assert_true(example.verify_cover(solution))
   assert_true(@fusekite.verify_sop_with_bdd(example.spec, solution))
+  assert_true(
+    @fusekite.verify_sop_with_sat(
+      example.spec,
+      solution,
+      @sat.SolverConfig::new(100_000).unwrap(),
+    )
+    is @fusekite.SatEquivalence::Equivalent,
+  )
   let cost = @fusekite.estimate_sop_gate_cost(example.spec, solution)
   let packages = @parts.estimate_74hc_packages(cost)
   assert_eq(packages.and_packages, 1)
@@ -154,6 +170,14 @@ test "two-of-three alarm cover matches all eight sensor combinations" {
   assert_eq(solution.patterns(), ["-11", "1-1", "11-"])
   assert_true(example.verify_cover(solution))
   assert_true(@fusekite.verify_sop_with_bdd(example.spec, solution))
+  assert_true(
+    @fusekite.verify_sop_with_sat(
+      example.spec,
+      solution,
+      @sat.SolverConfig::new(100_000).unwrap(),
+    )
+    is @fusekite.SatEquivalence::Equivalent,
+  )
   let cost = @fusekite.estimate_sop_gate_cost(example.spec, solution)
   let packages = @parts.estimate_74hc_packages(cost)
   assert_eq(packages.and_packages, 1)
