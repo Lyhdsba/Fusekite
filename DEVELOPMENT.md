@@ -83,7 +83,6 @@ differential corpus against Z3, literal-level SOP simulation, and the runnable
 examples. They do not claim an independent line-by-line review, differential
 coverage of arbitrary SMT formulas, external HDL simulation, physical testing,
 electrical qualification, or approval under a particular competition's AI-use
-rules.
-The submitter should be able to explain the minimization and tie-break rules,
-reproduce the checks, and verify the exact selected device variants before
-making claims about hardware behavior.
+rules. Hardware use still requires verification against the exact selected
+device variants and their datasheets; software estimates do not establish
+electrical behavior.
