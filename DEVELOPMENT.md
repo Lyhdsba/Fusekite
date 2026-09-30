@@ -33,6 +33,9 @@ commit history and this record should be read together.
 | `a349dbc` | Added canonical ROBDD operations and BDD-based SOP verification | 28 tests passed; [remote CI passed](https://github.com/Lyhdsba/Fusekite/actions/runs/36678108262). |
 | `84eea16` | Added CNF normalization, Tseitin encoding, DIMACS parsing, and bounded DPLL | 35 tests in that revision; [remote CI passed](https://github.com/Lyhdsba/Fusekite/actions/runs/36679540370). |
 | `d1e88da` | Added two-watched propagation, SAT counterexample verification, and runnable DIMACS examples | 41 tests passed locally; [remote CI passed](https://github.com/Lyhdsba/Fusekite/actions/runs/36680024543). |
+| `8cee460` | Corrected the recorded test count for the SAT milestone | [Remote CI passed](https://github.com/Lyhdsba/Fusekite/actions/runs/36680140854). |
+| `6b898bf` | Corrected the proposal's description of watched-literal propagation | 41 tests passed; [remote CI passed](https://github.com/Lyhdsba/Fusekite/actions/runs/36683796025). |
+| `649148b` | Added bounded QF_BV bit-vector operations lowered to the SAT backend | 48 tests passed; exhaustive two-bit operator checks; [remote CI passed](https://github.com/Lyhdsba/Fusekite/actions/runs/36685216612). |
 
 This table records verifiable commits and checks. Automated results do not
 establish independent manual review, hardware correctness, or electrical
@@ -52,8 +55,8 @@ moon doc
 moon package --list
 ```
 
-The current test suite includes an exhaustive oracle for three-input Boolean
-functions, every two-variable CNF paired with a truth-assignment oracle and the
+At `649148b`, the suite contains 48 tests, including an exhaustive oracle for
+three-input Boolean functions, every two-variable CNF paired with a truth-assignment oracle and the
 ROBDD backend, 1,024 sampled three-variable CNFs checked against exhaustive
 assignments, DIMACS parser boundary cases, Tseitin truth-table checks, SAT
 counterexample checks for all worked circuits, arithmetic-limit checks for
