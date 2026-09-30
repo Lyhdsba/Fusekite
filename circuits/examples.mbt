@@ -5,7 +5,7 @@ pub struct CircuitExample {
   name : String
   input_labels : Array[String]
   spec : @fusekite.TruthSpec
-  expected_outputs : Array[Int]
+  priv expected_outputs : Array[Int]
   assumptions : String
 }
 
@@ -15,24 +15,40 @@ fn make_example(
   input_labels : Array[String],
   on_set : Array[Int],
   dont_cares : Array[Int],
+  expected_outputs : Array[Int],
   assumptions : String,
 ) -> CircuitExample? {
+  if expected_outputs.length() != 1 << input_labels.length() {
+    return None
+  }
+  for row in 0..<expected_outputs.length() {
+    let expected = expected_outputs[row]
+    if (expected == 1 && !on_set.contains(row)) ||
+      (expected == 0 && (on_set.contains(row) || dont_cares.contains(row))) ||
+      (expected == -1 && !dont_cares.contains(row)) ||
+      expected < -1 ||
+      expected > 1 {
+      return None
+    }
+  }
   let spec = match
     @fusekite.TruthSpec::new(input_labels.length(), on_set, dont_cares) {
     Some(spec) => spec
     None => return None
   }
-  let outputs : Array[Int] = []
-  for _ in 0..<(1 << input_labels.length()) {
-    outputs.push(0)
-  }
-  for row in on_set {
-    outputs[row] = 1
-  }
-  for row in dont_cares {
-    outputs[row] = -1
-  }
-  Some({ name, input_labels, spec, expected_outputs: outputs, assumptions, })
+  Some({
+    name,
+    input_labels,
+    spec,
+    expected_outputs: expected_outputs.copy(),
+    assumptions,
+  })
+}
+
+///|
+/// Return a copy of the independently authored expected output vector.
+pub fn CircuitExample::expected_outputs(self : CircuitExample) -> Array[Int] {
+  self.expected_outputs.copy()
 }
 
 ///|
@@ -45,6 +61,7 @@ pub fn sensor_interlock() -> CircuitExample raise {
       ["door_closed", "sensor_clear"],
       [3],
       [],
+      [0, 0, 0, 1],
       "Both inputs are active-high and the output is an active-high enable.",
     ) {
     Some(example) => example
@@ -62,6 +79,7 @@ pub fn bcd_segment_a() -> CircuitExample raise {
       ["D8", "D4", "D2", "D1"],
       [0, 2, 3, 5, 6, 7, 8, 9],
       [10, 11, 12, 13, 14, 15],
+      [1, 0, 1, 1, 0, 1, 1, 1, 1, 1, -1, -1, -1, -1, -1, -1],
       "The display is common-cathode (active-high segment); inputs 10–15 never occur as valid BCD.",
     ) {
     Some(example) => example
@@ -79,6 +97,7 @@ pub fn majority_alarm() -> CircuitExample raise {
       ["sensor_A", "sensor_B", "sensor_C"],
       [3, 5, 6, 7],
       [],
+      [0, 0, 0, 1, 0, 1, 1, 1],
       "All sensors are active-high and equally authoritative; alarm is active-high.",
     ) {
     Some(example) => example
@@ -111,9 +130,43 @@ pub fn CircuitExample::verify_cover(
 }
 
 ///|
+/// Evaluate the two-level SOP as input literals, product terms, and an OR
+/// stage. This models Boolean behavior only, not propagation delay or device
+/// electrical characteristics.
+pub fn CircuitExample::simulate_cover(
+  self : CircuitExample,
+  solution : @fusekite.CoverSolution,
+  inputs : Array[Bool],
+) -> Bool? {
+  if inputs.length() != self.input_labels.length() {
+    return None
+  }
+  for cube in solution.selected {
+    if cube.width != inputs.length() {
+      return None
+    }
+  }
+  let mut output = false
+  for cube in solution.selected {
+    let mut term = true
+    for index in 0..<inputs.length() {
+      let mask = 1 << (cube.width - index - 1)
+      if (cube.wildcard & mask) == 0 {
+        let literal_value = (cube.value & mask) != 0
+        if inputs[index] != literal_value {
+          term = false
+        }
+      }
+    }
+    output = output || term
+  }
+  Some(output)
+}
+
+///|
 test "interlock cover matches all independently listed rows" {
   let example = sensor_interlock()
-  assert_eq(example.expected_outputs, [0, 0, 0, 1])
+  assert_eq(example.expected_outputs(), [0, 0, 0, 1])
   let solution = @fusekite.minimize_sop(example.spec)
   assert_eq(solution.patterns(), ["11"])
   assert_true(example.verify_cover(solution))
@@ -134,9 +187,19 @@ test "interlock cover matches all independently listed rows" {
 }
 
 ///|
+test "worked examples reject inconsistent independently listed output vectors" {
+  assert_true(make_example("bad", ["A"], [1], [], [0, 0], "test") is None)
+  assert_true(make_example("bad", ["A"], [1], [], [1, -1], "test") is None)
+  let expected = [0, 1]
+  let example = make_example("copy", ["A"], [1], [], expected, "test").unwrap()
+  expected[0] = 1
+  assert_eq(example.expected_outputs(), [0, 1])
+}
+
+///|
 test "BCD segment cover matches all valid digits and skips invalid BCD" {
   let example = bcd_segment_a()
-  assert_eq(example.expected_outputs, [
+  assert_eq(example.expected_outputs(), [
     1, 0, 1, 1, 0, 1, 1, 1, 1, 1, -1, -1, -1, -1, -1, -1,
   ])
   let solution = @fusekite.minimize_sop(example.spec)
@@ -165,7 +228,7 @@ test "BCD segment cover matches all valid digits and skips invalid BCD" {
 ///|
 test "two-of-three alarm cover matches all eight sensor combinations" {
   let example = majority_alarm()
-  assert_eq(example.expected_outputs, [0, 0, 0, 1, 0, 1, 1, 1])
+  assert_eq(example.expected_outputs(), [0, 0, 0, 1, 0, 1, 1, 1])
   let solution = @fusekite.minimize_sop(example.spec)
   assert_eq(solution.patterns(), ["-11", "1-1", "11-"])
   assert_true(example.verify_cover(solution))
@@ -183,4 +246,26 @@ test "two-of-three alarm cover matches all eight sensor combinations" {
   assert_eq(packages.and_packages, 1)
   assert_eq(packages.or_packages, 1)
   assert_eq(packages.inverters, 0)
+}
+
+///|
+test "SOP gate-level simulation matches every specified example row" {
+  let examples = [sensor_interlock(), bcd_segment_a(), majority_alarm()]
+  for example in examples {
+    let solution = @fusekite.minimize_sop(example.spec)
+    let expected_outputs = example.expected_outputs()
+    for row in 0..<(1 << example.input_labels.length()) {
+      let inputs : Array[Bool] = []
+      for index in 0..<example.input_labels.length() {
+        let mask = 1 << (example.input_labels.length() - index - 1)
+        inputs.push((row & mask) != 0)
+      }
+      let simulated = example.simulate_cover(solution, inputs).unwrap()
+      let expected = expected_outputs[row]
+      if expected >= 0 {
+        assert_eq(simulated, expected == 1)
+      }
+    }
+    assert_true(example.simulate_cover(solution, []) is None)
+  }
 }

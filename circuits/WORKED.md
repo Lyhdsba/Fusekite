@@ -50,8 +50,13 @@ any pair or for all three. The truth table is `000,001,010,100 → 0` and
 function `A·B + A·C + B·C`. A direct two-level mapping uses three AND2 and two
 OR2 gates: one SN74HC08 and one SN74HC32 package.
 
-Each worked case has a separately written expected output vector in
-`examples.mbt`; the tests compare the minimized cover against that vector,
-including all specified zero rows and excluding only the BCD don't-cares. Each
-example also runs ROBDD equivalence and a SAT counterexample query; only a
-proved-UNSAT mismatch query is recorded as equivalent.
+Each worked case has a separately authored expected output vector in
+`examples.mbt`, distinct from the on-set used to construct its truth-table
+specification. Example construction rejects vectors inconsistent with the
+specified on-set and don't-care rows. Tests compare the minimized cover against
+that vector, including all specified zero rows and excluding only the BCD
+don't-cares. A separate literal-by-literal SOP evaluator also simulates every
+specified input combination for all three examples. Each example runs ROBDD
+equivalence and a SAT counterexample query; only a proved-UNSAT mismatch query
+is recorded as equivalent. These are software-level Boolean checks, not an
+external HDL simulator run; no physical device or breadboard test is claimed.

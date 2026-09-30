@@ -68,7 +68,7 @@ every two-bit operand pair checked against the bounded bit-vector operators.
 Passing automated checks does not establish electrical safety or prove that a
 person has reviewed the design.
 
-The separate Python check emits 2,550 deterministic QF_BV constraints across
+The separate Python check emits 3,586 deterministic QF_BV constraints across
 widths 1 through 8 and compares SAT status with the pinned Z3 reference. For
 satisfiable cases it checks the returned source assignment against concrete
 unsigned arithmetic and asks Z3 to validate the same model.
@@ -77,10 +77,11 @@ unsigned arithmetic and asks Z3 to validate the same model.
 
 The recorded checks cover software formatting, type checking, tests, builds,
 documentation, packaging, SAT/BDD/QF_BV software oracles, a bounded QF_BV
-differential corpus against Z3, and the runnable examples. They do not claim an
-independent line-by-line review, differential coverage of arbitrary SMT
-formulas, physical or simulator testing, electrical qualification, or approval
-under a particular competition's AI-use rules.
+differential corpus against Z3, literal-level SOP simulation, and the runnable
+examples. They do not claim an independent line-by-line review, differential
+coverage of arbitrary SMT formulas, external HDL simulation, physical testing,
+electrical qualification, or approval under a particular competition's AI-use
+rules.
 The submitter should be able to explain the minimization and tie-break rules,
 reproduce the checks, and verify the exact selected device variants before
 making claims about hardware behavior.

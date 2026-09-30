@@ -6,7 +6,7 @@ Fusekite is a MoonBit Boolean-reasoning and electronics-planning library. It com
 
 ## Current stage
 
-Fusekite provides a reduced ordered binary decision diagram (ROBDD) manager with a fixed variable order, unique-node reduction, memoized AND/OR/XOR application, complement, evaluation, and canonical equivalence checks. Its `sat/` package validates and normalizes CNF, parses DIMACS files, encodes Boolean expression trees with Tseitin variables, and solves with deterministic DPLL propagation under an explicit search budget. The `smt/` package adds a deliberately small QF_BV front end: unsigned bit-vectors up to 8 bits, bitwise operations, wrapping addition, equality, and unsigned comparison are bit-blasted through that SAT backend. A SAT-backed verifier can return a concrete counterexample when an SOP cover is wrong. Alongside these foundations, Fusekite validates a single-output truth table, performs deterministic Quine–McCluskey refinement and exact minimum SOP selection, estimates direct SOP gate counts, and maps those estimates to a sourced 74HC catalog.
+Fusekite provides a reduced ordered binary decision diagram (ROBDD) manager with a fixed variable order, unique-node reduction, memoized AND/OR/XOR application, complement, evaluation, and canonical equivalence checks. Its `sat/` package validates and normalizes CNF, parses DIMACS files, encodes Boolean expression trees with shared Tseitin subexpressions, and solves with deterministic DPLL propagation under an explicit search budget. The `smt/` package adds a bounded QF_BV bit-blasting front end: unsigned bit-vectors up to 8 bits, bitwise operations, wrapping add/subtract, low-product multiplication, equality, and signed/unsigned comparison. A SAT-backed verifier can return a concrete counterexample when an SOP cover is wrong. Alongside these foundations, Fusekite validates a single-output truth table, performs deterministic Quine–McCluskey refinement and exact minimum SOP selection, estimates direct SOP gate counts, and maps those estimates to a sourced 74HC catalog.
 
 The truth-table minimizer is intentionally bounded to one output and at most eight inputs. The ROBDD manager accepts 1–32 variables, but BDD size can grow exponentially for some functions. The CNF solver accepts up to 4,096 variables, uses two-watched-literal propagation, and caps search at a caller-selected budget. The QF_BV layer bit-blasts into Boolean expressions and CNF; this is not a native theory solver or a complete SMT implementation. DPLL remains chronological and has no conflict learning or CDCL; hard formulas can return `Unknown` when the budget expires. Fusekite is an educational planning aid, not a substitute for datasheet checks, timing analysis, or electrical safety review.
 
@@ -48,14 +48,15 @@ counts return a typed error rather than a partial formula.
 `SatOutcome::Unknown` is a budget result, never an unsatisfiability claim. See
 [`DESIGN.md`](DESIGN.md) for the encoding and solver invariants.
 
-The bounded `smt/` front end builds fixed-width unsigned constraints and sends
+The bounded `smt/` front end builds fixed-width bit-vector constraints and sends
 them through the SAT encoder. Bit positions and returned source models are
 least-significant-bit first. For example, a four-bit `x + 3 = 2` constraint
 uses wrapping arithmetic modulo 16 and has the model `x = 15`. Widths above 8,
-signed arithmetic, multiplication, arrays, quantifiers, and SMT-LIB parsing are
-outside this API. This bit-blasting layer should not be confused with Z3 or a
-general-purpose SMT solver. `BitVec::evaluate(model)` can turn a returned
-source assignment back into an unsigned value for checking a result.
+signed arithmetic beyond signed comparison, division, shifts, concatenation,
+arrays, quantifiers, and SMT-LIB parsing are outside this API. This bit-blasting
+layer should not be confused with Z3 or a general-purpose SMT solver.
+`BitVec::evaluate(model)` can turn a returned source assignment back into an
+unsigned value for checking a result.
 
 Run all three electronics demonstrations with:
 
@@ -74,21 +75,21 @@ four-bit QF_BV wraparound constraint. Device assumptions and full truth tables a
 1. **Symbolic Boolean foundation** — canonical ROBDD operations and Tseitin CNF encoding with bounded DPLL SAT solving.
 2. **Truth-table refinement and SOP cover** — explicit validation, coverage chart, essential implicants, deterministic exact selection, and BDD/SAT equivalence checks.
 3. **Bench planning** — two-level gate estimates, a TI-sourced 74HC catalog, and three circuit examples with independent truth-table, BDD, and SAT checks.
-4. **Bounded bit-vector reasoning** — a small QF_BV bit-blasting front end for unsigned vectors up to 8 bits, checked against exhaustive two-bit operator cases.
+4. **Bounded bit-vector reasoning** — a small QF_BV bit-blasting front end for vectors up to 8 bits, with add/subtract/multiply and signed/unsigned comparison, checked against exhaustive two-bit cases and a Z3 corpus.
 
 ## Planned work
 
 1. Add POS presentation and tests without changing the current SOP contract.
 2. Add conflict learning and measured branching heuristics only alongside independent regression oracles and a published formula set.
 3. Extend the deterministic Z3 differential corpus beyond the current bounded operator and width matrix before adding more QF_BV constructs.
-4. Consider additional bit-vector operators only with width-boundary and independent semantic tests; the current front end does not implement full SMT.
+4. Consider division, shifts, and concatenation only with width-boundary and independent semantic tests; the current front end does not implement full SMT.
 5. Add pin-level wiring guidance only for exact device variants after datasheet review; physical qualification remains out of scope until actually performed.
 
 The examples cover a two-sensor interlock, one BCD-to-seven-segment output, and a threshold/alarm condition.
 
 ## Project shape
 
-The root MoonBit package contains the reusable ROBDD manager in `bdd.mbt`, SAT-backed SOP verification in `sat_verify.mbt`, truth-table refinement and cover selection in `fusekite.mbt`, `coverage.mbt`, and `cover.mbt`, and structural cost primitives in `gate_cost.mbt`. The independent `sat/` package contains validated CNF, the Boolean-expression Tseitin encoder, and the DPLL solver. The `smt/` package lowers its bounded bit-vector operations to that SAT interface. The `parts/` package contains a sourced catalog; `circuits/` contains worked examples with independent truth-table, BDD, and SAT checks; a small executable lives under `cmd/main`.
+The root MoonBit package contains the reusable ROBDD manager in `bdd.mbt`, SAT-backed SOP verification in `sat_verify.mbt`, truth-table refinement and cover selection in `fusekite.mbt`, `coverage.mbt`, and `cover.mbt`, and structural cost primitives in `gate_cost.mbt`. The independent `sat/` package contains validated CNF, the Boolean-expression Tseitin encoder, and the DPLL solver. The `smt/` package lowers its bounded bit-vector operations to that SAT interface. The `parts/` package contains a sourced catalog; `circuits/` contains worked examples with independent truth-table vectors, literal-level SOP simulation, BDD, and SAT checks; a small executable lives under `cmd/main`.
 
 ## Build and test
 
