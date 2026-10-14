@@ -269,3 +269,36 @@ test "SOP gate-level simulation matches every specified example row" {
     assert_true(example.simulate_cover(solution, []) is None)
   }
 }
+
+///|
+test "worked POS examples match expected rows and direct symbolic checks" {
+  let examples = [sensor_interlock(), bcd_segment_a(), majority_alarm()]
+  let patterns = [["-0", "0-"], ["-100", "0001"], ["-00", "0-0", "00-"]]
+  let literal_counts = [2, 7, 6]
+  let config = @sat.SolverConfig::new(100_000).unwrap()
+  for index in 0..<examples.length() {
+    let example = examples[index]
+    let pos = @fusekite.minimize_pos(example.spec)
+    assert_eq(pos.patterns(), patterns[index])
+    assert_eq(pos.clause_count, patterns[index].length())
+    assert_eq(pos.literal_count, literal_counts[index])
+    let expected = example.expected_outputs()
+    for row in 0..<expected.length() {
+      if expected[row] >= 0 {
+        assert_eq(pos.evaluate(row), Some(expected[row] == 1))
+      }
+    }
+    assert_true(@fusekite.verify_pos_with_bdd(example.spec, pos))
+    assert_true(
+      @fusekite.verify_pos_with_sat(example.spec, pos, config)
+      is @fusekite.SatEquivalence::Equivalent,
+    )
+  }
+  // The two minimizers may choose different completions on unspecified BCD rows.
+  let bcd = bcd_segment_a()
+  let sop = @fusekite.minimize_sop(bcd.spec)
+  let pos = @fusekite.minimize_pos(bcd.spec)
+  assert_eq(bcd.expected_outputs()[12], -1)
+  assert_eq(bcd.simulate_cover(sop, [true, true, false, false]), Some(true))
+  assert_eq(pos.evaluate(12), Some(false))
+}

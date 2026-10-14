@@ -128,11 +128,46 @@ Run all three electronics demonstrations with:
 moon run cmd/main
 ```
 
-The demo prints each selected cover, primitive gate count and a whole-package
-estimate for SN74HC04/08/32, then parses and solves DIMACS SAT examples and a
-four-bit QF_BV wraparound constraint. Device assumptions and full truth tables are in
+The demo prints SOP patterns and POS zero patterns, term/clause and literal
+counts, and the input assumptions. It checks both forms against the independently
+listed expected rows and runs their BDD/SAT equivalence checks (SAT budget:
+100,000 search nodes). A mismatch or an unproved SAT result fails the demo.
+It prints unspecified BCD rows separately, followed by SOP-only gate/package
+estimates, DIMACS SAT examples, and a four-bit QF_BV wraparound constraint.
+Device assumptions and full truth tables are in
 [`circuits/WORKED.md`](circuits/WORKED.md); the sourced catalog is described in
 [`parts/74hc-catalog.md`](parts/74hc-catalog.md).
+
+## Three complete usage scenarios
+
+All three scenarios run with `moon run cmd/main`. Row numbers use the first
+listed input as the most significant bit; the input arrays below are the
+on-set and don't-care rows passed to `TruthSpec::new` in `circuits/examples.mbt`.
+
+| User and task | Input | Steps | Expected result |
+| --- | --- | --- | --- |
+| A digital-logic student compares two forms of a sensor interlock. | `door_closed, sensor_clear`; 2 inputs, on-set `[3]`, no don't-cares; active-high enable. | Run the demo; read the interlock block; decode SOP `1` as a positive literal and POS `0` as a positive literal; check all four specified rows and BDD/SAT results. | SOP `11` is `door_closed AND sensor_clear` (1 term, 2 literals). POS `-0, 0-` is `(sensor_clear) AND (door_closed)` (2 clauses, 2 literals). Both output `0,0,0,1`; the SOP estimate is one AND2 gate / one HC08 package. |
+| A display-logic learner compares an active-high BCD segment with don't-cares. | `D8,D4,D2,D1`; 4 inputs, on-set `[0,2,3,5,6,7,8,9]`, don't-cares `[10,11,12,13,14,15]`; common-cathode segment `a`, valid BCD source. | Run the demo; read the BCD block; compare cost counts and the ten specified rows; inspect the separately labeled unspecified rows. | SOP `--1-, -0-0, -1-1, 1---` has 4 terms / 6 literals. POS `-100, 0001` has 2 clauses / 7 literals: `(!D4 OR D2 OR D1) AND (D8 OR D4 OR D2 OR !D1)`. Digits 1 and 4 output 0, the other valid digits 1; BDD/SAT confirm cared-row equivalence. |
+| A prototype designer studies a two-of-three alarm predicate. | `sensor_A,sensor_B,sensor_C`; 3 inputs, on-set `[3,5,6,7]`, no don't-cares; equal, active-high sensor inputs. | Run the demo; read the alarm block; compare the pairwise products and sums; check all eight specified rows and the SOP package estimate. | SOP `-11, 1-1, 11-` is `BC OR AC OR AB`; POS `-00, 0-0, 00-` is `(B OR C) AND (A OR C) AND (A OR B)`. Both have 3 terms/clauses and 6 literals, assert exactly when at least two inputs are 1, and pass BDD/SAT checks. SOP uses 3 AND2 and 2 OR2 gates / one HC08 and one HC32 package. |
+
+### Choosing SOP or POS and respecting the limits
+
+SOP is an OR of AND terms covering required 1 rows. POS is an AND of OR clauses
+excluding required 0 rows; its patterns encode where a clause is false, so their
+literal polarity is opposite to SOP. Use SOP for the existing AND/OR gate and
+74HC package planning path; use POS to study conjunctive conditions or compare
+two-level clause/literal costs. Fewer clauses do not establish fewer gates or
+packages: the BCD result uses fewer clauses but more literals. Each minimizer
+optimizes its own term/clause count, then literals, then deterministic patterns;
+neither optimizes arbitrary networks, delay, hazards, or physical hardware.
+
+Both forms accept one output and 1–8 inputs. Don't-care rows may take different
+values in the two results: BCD code 12 evaluates to SOP 1 and POS 0. These values
+are chosen completions, not requirements. If invalid BCD can occur, specify its
+outputs instead of marking it as don't-care. POS gate/package estimation and
+NAND/NOR mapping are not implemented. The interlock and alarm are Boolean
+teaching examples; no safety qualification or manual/hardware test is claimed.
+SAT `Unknown` must remain inconclusive, even when BDD succeeds.
 
 ## Implemented milestones
 
@@ -144,7 +179,7 @@ four-bit QF_BV wraparound constraint. Device assumptions and full truth tables a
 
 ## Planned work
 
-1. Add SOP/POS circuit demonstrations.
+1. Evaluate POS and NAND/NOR gate/package estimation with explicit device models and independent checks.
 2. Add conflict learning and measured branching heuristics only alongside independent regression oracles and a published formula set.
 3. Extend the deterministic Z3 differential corpus beyond the current bounded operator and width matrix before adding more QF_BV constructs.
 4. Consider division, shifts, and concatenation only with width-boundary and independent semantic tests; the current front end does not implement full SMT.

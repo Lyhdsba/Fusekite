@@ -1,7 +1,8 @@
 ///|
 /// Print a worked logic plan and its direct 74HC package estimate.
-fn show_example(example : @circuits.CircuitExample) -> Unit {
+fn show_example(example : @circuits.CircuitExample) -> Unit raise {
   let solution = @fusekite.minimize_sop(example.spec)
+  let pos = @fusekite.minimize_pos(example.spec)
   let cost = @fusekite.estimate_sop_gate_cost(example.spec, solution)
   let packages = @parts.estimate_74hc_packages(cost)
   println("\n\{example.name}")
@@ -13,11 +14,56 @@ fn show_example(example : @circuits.CircuitExample) -> Unit {
     labels += example.input_labels[index]
   }
   println("inputs: \{labels}")
+  println("assumptions: \{example.assumptions}")
   println("minimum SOP patterns:")
   for pattern in solution.patterns() {
     println("  \{pattern}")
   }
   println("terms: \{solution.term_count}, literals: \{solution.literal_count}")
+  println("minimum POS zero patterns (0: positive, 1: negated, -: omitted):")
+  for pattern in pos.patterns() {
+    println("  \{pattern}")
+  }
+  println("clauses: \{pos.clause_count}, literals: \{pos.literal_count}")
+  let expected = example.expected_outputs()
+  let mut checked = 0
+  for row in 0..<expected.length() {
+    let inputs : Array[Bool] = []
+    for index in 0..<example.input_labels.length() {
+      inputs.push(
+        (row & (1 << (example.input_labels.length() - index - 1))) != 0,
+      )
+    }
+    if expected[row] >= 0 {
+      if example.simulate_cover(solution, inputs) != Some(expected[row] == 1) ||
+        pos.evaluate(row) != Some(expected[row] == 1) {
+        fail("worked example differs from expected output at row \{row}")
+      }
+      checked += 1
+    } else {
+      let value = if pos.evaluate(row).unwrap() { "1" } else { "0" }
+      println(
+        "unspecified row \{row}: POS evaluates to \{value} (not guaranteed by spec)",
+      )
+    }
+  }
+  let config = @sat.SolverConfig::new(100_000).unwrap()
+  if !@fusekite.verify_sop_with_bdd(example.spec, solution) ||
+    !@fusekite.verify_pos_with_bdd(example.spec, pos) {
+    fail("worked example BDD equivalence check failed")
+  }
+  match @fusekite.verify_sop_with_sat(example.spec, solution, config) {
+    @fusekite.SatEquivalence::Equivalent => ()
+    _ => fail("worked example SOP SAT check did not prove equivalence")
+  }
+  match @fusekite.verify_pos_with_sat(example.spec, pos, config) {
+    @fusekite.SatEquivalence::Equivalent => ()
+    _ => fail("worked example POS SAT check did not prove equivalence")
+  }
+  println(
+    "SOP/POS expected rows: \{checked}; BDD: equivalent; SAT: equivalent (budget 100000)",
+  )
+  println("SOP estimates only; POS gate/package estimates are not implemented.")
   println(
     "gate counts (NOT, AND2, OR2): \{cost.inverters}, \{cost.and2_gates}, \{cost.or2_gates}",
   )

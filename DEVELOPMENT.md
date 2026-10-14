@@ -109,6 +109,36 @@ proof or human/hardware validation. The AI coding assistant substantially
 contributed to the verification APIs, tests, and documentation. The preceding
 remote CI toolchain-drift failure remains distinct from these local results.
 
+## POS usage scenarios and public disclosure (2026-10-15)
+
+The executable now compares SOP/POS for the interlock, BCD segment a, and
+two-of-three alarm. It prints assumptions, patterns, and clause/literal costs;
+checks both results against the independent expected vectors (4, 10, and 8
+cared rows); and requires both BDD and SAT proofs. SAT uses 100,000 search nodes,
+and any counterexample, invalid input, or `Unknown` fails the demo. Unspecified
+BCD rows are printed separately; code 12 has SOP 1 and POS 0. The added circuit
+test pins all three POS results and explicitly checks that allowed difference.
+Gate/package estimates remain SOP-only; POS and NAND/NOR mapping are absent.
+
+README and both proposal documents give the user, input, steps, and expected
+result for each scenario. They distinguish two-level term/clause costs from
+hardware cost and identify the proposals as AI-assisted preparation materials.
+The maintainer's recorded decisions concern the topic, electronics focus,
+scope, and requested work. Independent rewriting, personal reproduction,
+line-by-line review, datasheet review, and hardware testing have not been
+recorded as completed. Git publishing identity is not evidence of those actions.
+The AI coding assistant substantially contributed to this increment's code,
+automated checks, scenarios, and documentation.
+
+Local Moon `0.1.20260827` / moonc `v0.10.11+6ff76a5f9` checks passed:
+`moon fmt --check`, `moon check --deny-warn`, all 66 tests, `moon build`,
+`moon run cmd/main`, `moon doc`, `moon package --list`, and `git diff --check`.
+The QF_BV code and corpus were unchanged and the separate Z3 check was not
+rerun for this increment; prior results above remain historical evidence.
+At preparation time, the latest completed remote run was still the failed
+`1dbdb5b` format check linked above. Local checks do not establish remote CI
+success or resolve that toolchain drift.
+
 ## Reproduce the automated checks
 
 With the MoonBit toolchain and Python 3.12 installed, run from the repository checkout:
