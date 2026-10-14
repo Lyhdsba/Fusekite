@@ -44,6 +44,39 @@ This table records verifiable commits and checks. Automated results do not
 establish independent manual review, hardware correctness, or electrical
 qualification.
 
+## October POS increment (2026-10-15)
+
+Added `minimize_pos`, private-backed `PosClause`/`PosSolution` types, falsifying
+patterns, defensive-copy clause accessors, and range-checked row evaluation.
+The implementation reuses the existing complement SOP cover selector through
+De Morgan's law; it preserves the SOP contract. Constants, don't-cares,
+fully unconstrained specs, and the deterministic cost/tie-break order are
+documented in the [design contract](DESIGN.md#product-of-sums-selection).
+
+The AI coding assistant substantially contributed to this implementation,
+the eight new black-box tests, the independent literal-enumeration/subset-DP
+cost oracle, and documentation. All 256 three-input Boolean functions and all
+81 two-input ternary specs were checked for minimum clause/literal cost and
+cared-row semantics, including separate evaluation of the exported patterns.
+Additional tests cover constants at widths 1–8, don't-care expansion, empty
+products/sums, one-input polarity, eight-input endpoints/MSB, invalid rows,
+determinism, and defensive copies.
+
+Local Moon `0.1.20260827` / moonc `v0.10.11+6ff76a5f9` checks passed:
+`moon fmt --check`, `moon check --deny-warn`, all 59 tests, `moon build`,
+`moon run cmd/main`, `moon doc`, and `moon package --list`. The pinned Z3
+`5.1.0.0` differential check also passed all 3,586 existing QF_BV cases.
+These are automated software results; no human review or manual/hardware
+testing is claimed. Dedicated POS BDD/SAT verification and POS circuit
+demonstrations remain future work.
+
+The preceding main revision `1dbdb5b` failed its [remote format check](https://github.com/Lyhdsba/Fusekite/actions/runs/38590700258):
+the automatically installed Moon `0.1.20261012` formatter rewrites `Int` as
+`Int32`, unlike the local toolchain. This is a pre-existing toolchain drift;
+the local results above do not establish remote CI success. No unverified
+historical SDK pin or broad integer-type migration is included in this POS
+increment.
+
 ## Reproduce the automated checks
 
 With the MoonBit toolchain and Python 3.12 installed, run from the repository checkout:

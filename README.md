@@ -2,7 +2,7 @@
 
 **Boolean functions in. Canonical reasoning and a small-gate estimate out.**
 
-Fusekite is a MoonBit Boolean-reasoning and electronics-planning library. It combines a canonical ROBDD, a bounded DPLL SAT backend with Tseitin CNF encoding, an exact small-table SOP minimizer, and transparent 74HC gate estimates. The symbolic layers can be used independently; the electronics planner is a tested application built on those foundations.
+Fusekite is a MoonBit Boolean-reasoning and electronics-planning library. It combines a canonical ROBDD, a bounded DPLL SAT backend with Tseitin CNF encoding, exact small-table SOP and POS minimizers, and transparent 74HC gate estimates. The symbolic layers can be used independently; the electronics planner is a tested application built on those foundations.
 
 ## Current stage
 
@@ -62,6 +62,26 @@ let solution = minimize_sop(spec.unwrap())
 println(solution.patterns()) // ["--1"]
 ```
 
+For `F(A, B) = A OR NOT B`, the new POS API returns one sum clause:
+
+```moonbit
+let spec = TruthSpec::new(2, [0, 2, 3], []).unwrap()
+let solution = minimize_pos(spec)
+println(solution.patterns()) // ["01"]: (A OR NOT B)
+solution.evaluate(1) // Some(false)
+solution.evaluate(3) // Some(true)
+solution.evaluate(4) // None: out of range
+```
+
+POS patterns describe where each sum clause is **false**: `0` means a positive
+literal, `1` a complemented literal, and `-` an omitted variable. An empty
+clause list represents 1; one all-dash clause represents 0. The minimizer
+accepts the same validated 1–8 input specs and don't-cares as SOP, ranking by
+clause count, literal count, then sorted zero patterns (`- < 0 < 1`). Fully
+unconstrained tables select 1. `PosSolution` is separate from `CoverSolution`;
+existing BDD/SAT verifiers and gate estimates still accept SOP results only.
+See the [POS contract](DESIGN.md#product-of-sums-selection) for exact semantics.
+
 The ROBDD API can also be used without creating a truth-table specification:
 
 ```moonbit
@@ -118,10 +138,11 @@ four-bit QF_BV wraparound constraint. Device assumptions and full truth tables a
 2. **Truth-table refinement and SOP cover** — explicit validation, coverage chart, essential implicants, deterministic exact selection, and BDD/SAT equivalence checks.
 3. **Bench planning** — two-level gate estimates, a TI-sourced 74HC catalog, and three circuit examples with independent truth-table, BDD, and SAT checks.
 4. **Bounded bit-vector reasoning** — a small QF_BV bit-blasting front end for vectors up to 8 bits, with add/subtract/multiply and signed/unsigned comparison, checked against exhaustive two-bit cases and a Z3 corpus.
+5. **Exact POS minimization** — complement-cover reuse with separate clause/result types, zero-pattern presentation, checked row evaluation, constants and don't-cares, and an independent small-table cost oracle.
 
 ## Planned work
 
-1. Add POS presentation and tests without changing the current SOP contract.
+1. Add dedicated BDD/SAT POS verification and SOP/POS circuit demonstrations.
 2. Add conflict learning and measured branching heuristics only alongside independent regression oracles and a published formula set.
 3. Extend the deterministic Z3 differential corpus beyond the current bounded operator and width matrix before adding more QF_BV constructs.
 4. Consider division, shifts, and concatenation only with width-boundary and independent semantic tests; the current front end does not implement full SMT.
@@ -131,7 +152,7 @@ The examples cover a two-sensor interlock, one BCD-to-seven-segment output, and 
 
 ## Project shape
 
-The root MoonBit package contains the reusable ROBDD manager in `bdd.mbt`, SAT-backed SOP verification in `sat_verify.mbt`, truth-table refinement and cover selection in `fusekite.mbt`, `coverage.mbt`, and `cover.mbt`, and structural cost primitives in `gate_cost.mbt`. The independent `sat/` package contains validated CNF, the Boolean-expression Tseitin encoder, and the DPLL solver. The `smt/` package lowers its bounded bit-vector operations to that SAT interface. The `parts/` package contains a sourced catalog; `circuits/` contains worked examples with independent truth-table vectors, literal-level SOP simulation, BDD, and SAT checks; a small executable lives under `cmd/main`.
+The root MoonBit package contains the reusable ROBDD manager in `bdd.mbt`, SAT-backed SOP verification in `sat_verify.mbt`, truth-table refinement and cover selection in `fusekite.mbt`, `coverage.mbt`, and `cover.mbt`, POS minimization and evaluation in `pos.mbt`, and structural cost primitives in `gate_cost.mbt`. The independent `sat/` package contains validated CNF, the Boolean-expression Tseitin encoder, and the DPLL solver. The `smt/` package lowers its bounded bit-vector operations to that SAT interface. The `parts/` package contains a sourced catalog; `circuits/` contains worked examples with independent truth-table vectors, literal-level SOP simulation, BDD, and SAT checks; a small executable lives under `cmd/main`.
 
 ## Build and test
 
