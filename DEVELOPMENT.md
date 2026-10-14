@@ -67,8 +67,8 @@ Local Moon `0.1.20260827` / moonc `v0.10.11+6ff76a5f9` checks passed:
 `moon run cmd/main`, `moon doc`, and `moon package --list`. The pinned Z3
 `5.1.0.0` differential check also passed all 3,586 existing QF_BV cases.
 These are automated software results; no human review or manual/hardware
-testing is claimed. Dedicated POS BDD/SAT verification and POS circuit
-demonstrations remain future work.
+testing is claimed. POS circuit demonstrations remain future work; the next
+verification increment below adds dedicated POS BDD/SAT checks.
 
 The preceding main revision `1dbdb5b` failed its [remote format check](https://github.com/Lyhdsba/Fusekite/actions/runs/38590700258):
 the automatically installed Moon `0.1.20261012` formatter rewrites `Int` as
@@ -76,6 +76,38 @@ the automatically installed Moon `0.1.20261012` formatter rewrites `Int` as
 the local results above do not establish remote CI success. No unverified
 historical SDK pin or broad integer-type migration is included in this POS
 increment.
+
+## POS independent verification increment (2026-10-15)
+
+Added `verify_pos_with_bdd` and `verify_pos_with_sat`. Each constructs literal
+OR clauses and their AND directly from POS patterns, compares against the
+cared truth-table rows, and uses the existing independent symbolic backend.
+Neither calls the minimizer or POS row evaluator. Width mismatches, including
+empty products of the wrong width, are rejected. SAT returns MSB-first source
+inputs for a mismatch and preserves `Unknown` on exhausted search.
+
+Six additional black-box tests and the expanded three-input Boolean test ran:
+
+- All 6,561 three-input ternary specs passed the independent clause-enumeration
+  and subset-DP minimum-cost oracle, independent literal evaluation, and both
+  BDD/SAT equivalence checks. All 256 three-input Boolean functions also passed
+  both symbolic checks.
+- All 81 two-input ternary specs were compared with all 16 Boolean completions
+  (1,296 pairs). Independent row enumeration agreed with both symbolic results;
+  every SAT counterexample was replayed through literal semantics and confirmed
+  to lie outside the don't-care set.
+- Constants and fully unconstrained specs passed symbolic checks at every width
+  1–8. Further cases checked eight-input MSB-first witnesses, width rejection,
+  and a one-search-node budget returning `Unknown` before a larger-budget proof.
+
+Local Moon `0.1.20260827` / moonc `v0.10.11+6ff76a5f9` checks passed:
+`moon fmt --check`, `moon check --deny-warn`, all 65 tests, `moon build`,
+`moon run cmd/main`, `moon doc`, and `moon package --list`; `git diff --check`
+also passed. The separate pinned-Z3 `5.1.0.0` differential corpus passed all
+3,586 QF_BV cases again. These finite software checks do not establish an unbounded
+proof or human/hardware validation. The AI coding assistant substantially
+contributed to the verification APIs, tests, and documentation. The preceding
+remote CI toolchain-drift failure remains distinct from these local results.
 
 ## Reproduce the automated checks
 

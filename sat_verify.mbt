@@ -1,5 +1,5 @@
 ///|
-/// Result of asking the SAT backend for a counterexample to an SOP result.
+/// Result of asking the SAT backend for a counterexample to an SOP or POS result.
 pub enum SatEquivalence {
   Equivalent
   Counterexample(Array[Bool])

@@ -270,6 +270,7 @@ fn pos_cost_oracle(
 
 ///|
 test "POS all three-input functions match literal semantics and exact cost oracle" {
+  let config = @sat.SolverConfig::new(100_000).unwrap()
   for truth_bits in 0..<256 {
     let on_set : Array[Int] = []
     for row in 0..<8 {
@@ -290,6 +291,220 @@ test "POS all three-input functions match literal semantics and exact cost oracl
     let (clauses, literals) = pos_cost_oracle(3, on_set, [])
     assert_eq(solution.clause_count, clauses)
     assert_eq(solution.literal_count, literals)
+    assert_true(
+      @fusekite.verify_pos_with_bdd(spec_for(3, on_set, []), solution),
+    )
+    assert_true(
+      @fusekite.verify_pos_with_sat(spec_for(3, on_set, []), solution, config)
+      is @fusekite.SatEquivalence::Equivalent,
+    )
+  }
+}
+
+///|
+fn spec_for(
+  width : Int,
+  on_set : Array[Int],
+  dc : Array[Int],
+) -> @fusekite.TruthSpec {
+  @fusekite.TruthSpec::new(width, on_set, dc).unwrap()
+}
+
+///|
+test "POS all three-input ternary specs agree with independent cost and symbolic checks" {
+  let config = @sat.SolverConfig::new(100_000).unwrap()
+  for code in 0..<6561 {
+    let on_set : Array[Int] = []
+    let dc : Array[Int] = []
+    let mut digits = code
+    for row in 0..<8 {
+      if digits % 3 == 1 {
+        on_set.push(row)
+      } else if digits % 3 == 2 {
+        dc.push(row)
+      }
+      digits /= 3
+    }
+    let spec = spec_for(3, on_set, dc)
+    let solution = @fusekite.minimize_pos(spec)
+    let patterns = solution.patterns()
+    for row in 0..<8 {
+      let actual = evaluate_pos_patterns(patterns, row)
+      assert_eq(solution.evaluate(row), Some(actual))
+      if !dc.contains(row) {
+        assert_eq(actual, on_set.contains(row))
+      }
+    }
+    let (clauses, literals) = pos_cost_oracle(3, on_set, dc)
+    assert_eq(solution.clause_count, clauses)
+    assert_eq(solution.literal_count, literals)
+    assert_true(@fusekite.verify_pos_with_bdd(spec, solution))
+    assert_true(
+      @fusekite.verify_pos_with_sat(spec, solution, config)
+      is @fusekite.SatEquivalence::Equivalent,
+    )
+  }
+}
+
+///|
+test "POS verifiers agree with every two-input completion and replay counterexamples" {
+  let config = @sat.SolverConfig::new(100_000).unwrap()
+  for code in 0..<81 {
+    let on_set : Array[Int] = []
+    let dc : Array[Int] = []
+    let mut digits = code
+    for row in 0..<4 {
+      if digits % 3 == 1 {
+        on_set.push(row)
+      } else if digits % 3 == 2 {
+        dc.push(row)
+      }
+      digits /= 3
+    }
+    let spec = spec_for(2, on_set, dc)
+    for truth_bits in 0..<16 {
+      let candidate_on : Array[Int] = []
+      for row in 0..<4 {
+        if ((truth_bits >> row) & 1) == 1 {
+          candidate_on.push(row)
+        }
+      }
+      let candidate = @fusekite.minimize_pos(spec_for(2, candidate_on, []))
+      let mut equivalent = true
+      for row in 0..<4 {
+        if !dc.contains(row) &&
+          candidate_on.contains(row) != on_set.contains(row) {
+          equivalent = false
+        }
+      }
+      assert_eq(@fusekite.verify_pos_with_bdd(spec, candidate), equivalent)
+      match @fusekite.verify_pos_with_sat(spec, candidate, config) {
+        @fusekite.SatEquivalence::Equivalent => assert_true(equivalent)
+        @fusekite.SatEquivalence::Counterexample(inputs) => {
+          assert_true(!equivalent)
+          assert_eq(inputs.length(), 2)
+          let row = (if inputs[0] { 2 } else { 0 }) +
+            (if inputs[1] { 1 } else { 0 })
+          assert_true(!dc.contains(row))
+          assert_true(candidate_on.contains(row) != on_set.contains(row))
+          assert_true(
+            evaluate_pos_patterns(candidate.patterns(), row) !=
+            on_set.contains(row),
+          )
+        }
+        _ =>
+          fail("small POS comparison must finish with proof or counterexample")
+      }
+    }
+  }
+}
+
+///|
+test "POS verification rejects width mismatches including empty products" {
+  let config = @sat.SolverConfig::new(100_000).unwrap()
+  let spec = spec_for(1, [1], [])
+  let wrong_width = [
+    @fusekite.minimize_pos(spec_for(2, [0, 1, 2, 3], [])),
+    @fusekite.minimize_pos(spec_for(2, [], [])),
+    @fusekite.minimize_pos(spec_for(2, [1, 3], [])),
+  ]
+  for solution in wrong_width {
+    assert_true(!@fusekite.verify_pos_with_bdd(spec, solution))
+    assert_true(
+      @fusekite.verify_pos_with_sat(spec, solution, config)
+      is @fusekite.SatEquivalence::InvalidInput,
+    )
+  }
+}
+
+///|
+test "POS SAT verification preserves budget exhaustion" {
+  let spec = spec_for(3, [1, 2, 4, 7], [])
+  let solution = @fusekite.minimize_pos(spec)
+  assert_true(
+    @fusekite.verify_pos_with_sat(
+      spec,
+      solution,
+      @sat.SolverConfig::new(1).unwrap(),
+    )
+    is @fusekite.SatEquivalence::Unknown(_),
+  )
+  assert_true(
+    @fusekite.verify_pos_with_sat(
+      spec,
+      solution,
+      @sat.SolverConfig::new(100_000).unwrap(),
+    )
+    is @fusekite.SatEquivalence::Equivalent,
+  )
+}
+
+///|
+test "POS symbolic verification handles constants at widths one through eight" {
+  let config = @sat.SolverConfig::new(100_000).unwrap()
+  for width in 1..<9 {
+    let rows : Array[Int] = []
+    for row in 0..<(1 << width) {
+      rows.push(row)
+    }
+    for
+      spec in [
+        spec_for(width, [], []),
+        spec_for(width, rows, []),
+        spec_for(width, [], rows),
+      ] {
+      let solution = @fusekite.minimize_pos(spec)
+      assert_true(@fusekite.verify_pos_with_bdd(spec, solution))
+      assert_true(
+        @fusekite.verify_pos_with_sat(spec, solution, config)
+        is @fusekite.SatEquivalence::Equivalent,
+      )
+    }
+  }
+}
+
+///|
+test "POS eight-input symbolic checks preserve MSB first counterexamples" {
+  let dc : Array[Int] = []
+  for row in 0..<256 {
+    if row != 128 && row != 129 {
+      dc.push(row)
+    }
+  }
+  let spec = spec_for(8, [128], dc)
+  let config = @sat.SolverConfig::new(100_000).unwrap()
+  let solution = @fusekite.minimize_pos(spec)
+  assert_eq(solution.patterns(), ["-------1"])
+  assert_true(@fusekite.verify_pos_with_bdd(spec, solution))
+  assert_true(
+    @fusekite.verify_pos_with_sat(spec, solution, config)
+    is @fusekite.SatEquivalence::Equivalent,
+  )
+  let rows : Array[Int] = []
+  for row in 0..<256 {
+    rows.push(row)
+  }
+  for
+    candidate in [
+      @fusekite.minimize_pos(spec_for(8, [], [])),
+      @fusekite.minimize_pos(spec_for(8, rows, [])),
+    ] {
+    assert_true(!@fusekite.verify_pos_with_bdd(spec, candidate))
+    match @fusekite.verify_pos_with_sat(spec, candidate, config) {
+      @fusekite.SatEquivalence::Counterexample(inputs) => {
+        assert_eq(inputs.length(), 8)
+        assert_true(inputs[0])
+        let mut row = 0
+        for input in inputs {
+          row = row * 2 + (if input { 1 } else { 0 })
+        }
+        assert_true(!dc.contains(row))
+        assert_true(
+          evaluate_pos_patterns(candidate.patterns(), row) != (row == 128),
+        )
+      }
+      _ => fail("wrong eight-input constant must yield a cared-row witness")
+    }
   }
 }
 

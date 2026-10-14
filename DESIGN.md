@@ -77,19 +77,37 @@ clauses, and different SOP/POS results may choose different don't-care values.
 outside `0 <= row < 2^input_count`. Clause/essential accessors return copies so
 caller mutation cannot invalidate the result or its counts.
 
-POS black-box tests enumerate all 256 three-input Boolean functions and all
-81 two-input ternary specifications (0, 1, don't-care). A separate oracle
+POS black-box tests enumerate all 256 three-input Boolean functions, all
+81 two-input and all 6,561 three-input ternary specifications (0, 1, don't-care). A separate oracle
 enumerates all literal choices for valid sum clauses and uses subset dynamic
 programming to find the minimum clause/literal cost without using refinement,
 SOP selection, cube matching, or POS evaluation. Exported patterns are also
 evaluated independently as literal ORs followed by AND. Targeted tests cover
 tie-breaks, array copies, constants at every width 1–8, and eight-input endpoint
-and most-significant-bit cases. Dedicated BDD/SAT POS verification APIs and
-POS gate estimates are not implemented in this increment.
+and most-significant-bit cases.
+
+`verify_pos_with_bdd` and `verify_pos_with_sat` independently construct an AND
+of literal OR clauses from the exported zero patterns, rather than checking
+the complement SOP or calling the POS row evaluator. They compare it with the
+required on-set while masking don't-care rows. The BDD check tests that the
+masked XOR is false; the SAT check solves that mismatch with the existing
+Tseitin/DPLL backend. Only UNSAT becomes `Equivalent`; SAT returns an MSB-first
+input assignment, and exhausted search returns `Unknown(stats)`. A mismatched
+input width is rejected as false / `InvalidInput`, including empty products.
+
+All 256 three-input functions and all 6,561 three-input ternary specs pass
+both symbolic checks. Every one of the 16 two-input Boolean completions is
+also checked against each of the 81 ternary specs (1,296 comparisons); a
+separate cared-row enumeration decides equivalence, and every returned SAT
+witness is replayed through literal semantics and checked to be a cared row.
+Symbolic boundary checks cover constants and fully unconstrained specs at
+widths 1–8, eight-input witnesses, width rejection, and budget exhaustion.
+These finite automated checks do not establish correctness for arbitrary
+unbounded formulas or hardware behavior. POS gate estimates are not implemented.
 
 ## Decision points for later increments
 
-- Add dedicated BDD/SAT POS verification and SOP/POS circuit demonstrations.
+- Add SOP/POS circuit demonstrations.
 - Add conflict learning, non-chronological backtracking, and branching heuristics only with separate benchmarks and differential tests against a pinned reference solver such as Z3.
 - Explore NAND/NOR technology mapping only with a separately documented cost and verification model.
 - Add pin-level wiring guidance only after selecting exact orderable device variants and reviewing their current datasheets.
