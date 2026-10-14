@@ -10,6 +10,17 @@ Fusekite provides a reduced ordered binary decision diagram (ROBDD) manager with
 
 The truth-table minimizer is intentionally bounded to one output and at most eight inputs. The ROBDD manager accepts 1–32 variables, but BDD size can grow exponentially for some functions. The CNF solver accepts up to 4,096 variables, uses two-watched-literal propagation, and caps search at a caller-selected budget. The QF_BV layer bit-blasts into Boolean expressions and CNF; this is not a native theory solver or a complete SMT implementation. DPLL remains chronological and has no conflict learning or CDCL; hard formulas can return `Unknown` when the budget expires. Fusekite is an educational planning aid, not a substitute for datasheet checks, timing analysis, or electrical safety review.
 
+## Scope compared with MoonBDD
+
+Both projects implement ROBDDs and Boolean reasoning. MoonBDD also provides
+parsing, quantification, model counting, reordering, and bounded finite-state
+reachability. Fusekite's distinct implemented scope combines an independent
+CNF/Tseitin/DPLL backend, bounded QF_BV bit-blasting, exact small-table SOP
+minimization with BDD/SAT verification, and direct SOP gate/package estimates.
+See the [source-backed scope comparison](docs/MoonBDD与Fusekite范围对比.md)
+for pinned upstream and local sources, limits, and overlap. This comparison
+does not claim a MoonBDD dependency or code integration.
+
 ## Example
 
 For `F(A, B, C) = Σm(1, 3, 5, 7)`, the required rows all have `C = 1`. Fusekite produces the minimum cover `--1`, which corresponds to `F = C`.
