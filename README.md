@@ -10,7 +10,7 @@ Fusekite provides a reduced ordered binary decision diagram (ROBDD) manager with
 
 The truth-table minimizer is intentionally bounded to one output and at most eight inputs. The ROBDD manager accepts 1–32 variables, but BDD size can grow exponentially for some functions. The CNF solver accepts up to 4,096 variables, uses two-watched-literal propagation, and caps search at a caller-selected budget. The QF_BV layer bit-blasts into Boolean expressions and CNF; this is not a native theory solver or a complete SMT implementation. DPLL remains chronological and has no conflict learning or CDCL; hard formulas can return `Unknown` when the budget expires. Fusekite is an educational planning aid, not a substitute for datasheet checks, timing analysis, or electrical safety review.
 
-## Scope compared with MoonBDD
+## Relationship to MoonBDD
 
 Both projects implement ROBDDs and Boolean reasoning. MoonBDD also provides
 parsing, quantification, model counting, reordering, and bounded finite-state
@@ -18,8 +18,39 @@ reachability. Fusekite's distinct implemented scope combines an independent
 CNF/Tseitin/DPLL backend, bounded QF_BV bit-blasting, exact small-table SOP
 minimization with BDD/SAT verification, and direct SOP gate/package estimates.
 See the [source-backed scope comparison](docs/MoonBDD与Fusekite范围对比.md)
-for pinned upstream and local sources, limits, and overlap. This comparison
-does not claim a MoonBDD dependency or code integration.
+for pinned upstream and local sources, limits, and overlap.
+
+Fusekite currently uses its own ROBDD implementation in `bdd.mbt` and its own
+SAT/QF_BV packages. Its module metadata and package imports contain no MoonBDD
+dependency; there is no MoonBDD API call, adapter, or shared BDD handle interface.
+Fusekite is an independent project, not a MoonBDD fork or plugin, and does not
+claim code reuse, joint development, or endorsement by MoonBDD's author.
+
+The **complementary extension is at the project-capability level**: alongside
+MoonBDD's BDD analysis and finite-state exploration, Fusekite offers an
+independent CNF/SAT and bounded bit-vector path, plus a small truth-table → exact
+SOP → Boolean verification → gate/74HC package estimate workflow. This extends
+the range of tools available in the MoonBit ecosystem; it does not add those
+features to MoonBDD or connect the two projects in the current implementation.
+
+### Future reuse evaluation (not implemented)
+
+1. Pin a MoonBDD revision and review its public API, license/attribution duties,
+   variable order, manager/handle ownership, and resource/error contracts.
+2. Prototype an optional MoonBDD-backed SOP verification adapter or a bounded
+   truth-table interchange for at most eight inputs. Specify variable/row order
+   and don't-care semantics explicitly; never exchange raw BDD node identifiers
+   between managers. Keep Fusekite's SAT/QF_BV and electronics layers independent.
+3. Compare the prototype with exhaustive small truth tables and the existing
+   Fusekite BDD/SAT paths, including counterexamples and exhausted budgets;
+   measure time, memory, and dependency/maintenance costs before deciding on reuse.
+4. Publish the pinned version, adapter code, reproducible results, attribution,
+   and a reasoned adopt/defer decision. Only a completed, validated implementation
+   would be described as integration. No prototype, reuse evaluation results, or
+   integration are delivered by this documentation change.
+
+The [proposal's relationship and reuse plan](docs/项目申报书.md#92-当前技术关系与项目层面的互补扩展)
+states the same distinction between current capabilities and future work.
 
 ## Example
 
