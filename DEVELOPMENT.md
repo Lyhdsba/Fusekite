@@ -225,3 +225,31 @@ historical results. Local checks do not establish a subsequent remote CI result.
 The AI coding assistant substantially contributed to the guide, related
 documentation edits, source inspection, and automated validation. No independent
 human review, user feedback, or hardware testing is claimed.
+
+## Executable standalone solver scenarios (2026-10-15)
+
+The SAT and QF_BV sections of `moon run cmd/main` now require their expected
+outcomes rather than only printing unexpected results. The SAT example replays
+the returned model through `CnfFormula::accepts`; the QF_BV example uses
+`BitVec::evaluate` for both the variable and sum and independently checks the
+integer modulo-16 equation. A four-clause two-variable contradiction demonstrates
+`Unknown` with exactly one search node, then UNSAT with a 10,000-node budget.
+The Chinese usage guide records each user's task, exact inputs, API sequence,
+model interpretation, and observable output. No solver algorithm or public API
+changed; the existing CI example command exercises the added runtime checks.
+
+Using Moon `0.1.20261012` / moonc `v0.10.15+943464bfa`, these local commands
+passed: `moon fmt --check`, `moon check --deny-warn`, `moon test` (66 passed,
+0 failed), `moon build`, `moon run cmd/main`, `moon doc`, `moon package --list`,
+and `git diff --check`. The run printed SAT model `1, 0, 1` and confirmed all
+three input clauses; contradictory units returned UNSAT; the four-clause case
+returned the expected budget-dependent results. The four-bit case printed
+`x = 15` and confirmed `(15 + 3) % 16 = 2`. The three circuit scenarios also
+passed their existing 4/10/8 cared-row and SOP/POS BDD/SAT checks.
+
+The separate Z3 corpus was not rerun for this example-only implementation
+change; prior corpus results remain historical evidence. These local results
+do not establish a subsequent remote CI result. The AI coding assistant
+substantially contributed to the executable checks, scenario documentation,
+and automated validation; no human reproduction, user feedback, or hardware
+testing is claimed.

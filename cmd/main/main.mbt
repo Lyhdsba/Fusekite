@@ -79,7 +79,7 @@ fn show_sat_examples() -> Unit raise {
   let satisfiable = match
     @sat.CnfFormula::parse_dimacs(
       (
-        #| c x1 or x2; x3 follows if either x1 or x2 is false
+        #| c x1 or x2; x3 follows if either x1 or x2 is true
         #| p cnf 3 3
         #| 1 2 0
         #| -1 3 0
@@ -103,43 +103,77 @@ fn show_sat_examples() -> Unit raise {
   println("\nCNF / DPLL demonstrations")
   match satisfiable.solve(config).outcome {
     @sat.SatOutcome::Satisfiable(model) => {
+      if !satisfiable.accepts(model) {
+        fail("SAT demonstration model does not satisfy the input clauses")
+      }
       let x1 = if model[0] { "1" } else { "0" }
       let x2 = if model[1] { "1" } else { "0" }
       let x3 = if model[2] { "1" } else { "0" }
       println("SAT model (x1, x2, x3): " + x1 + ", " + x2 + ", " + x3)
+      println("SAT model replay: all 3 input clauses satisfied")
     }
-    @sat.SatOutcome::Unsatisfiable => println("unexpected UNSAT result")
-    @sat.SatOutcome::Unknown => println("search budget exhausted")
+    @sat.SatOutcome::Unsatisfiable =>
+      fail("SAT demonstration unexpectedly UNSAT")
+    @sat.SatOutcome::Unknown =>
+      fail("SAT demonstration search budget exhausted")
   }
   match contradiction.solve(config).outcome {
-    @sat.SatOutcome::Satisfiable(_) => println("unexpected SAT result")
+    @sat.SatOutcome::Satisfiable(_) =>
+      fail("contradictory units unexpectedly SAT")
     @sat.SatOutcome::Unsatisfiable => println("contradictory units: UNSAT")
-    @sat.SatOutcome::Unknown => println("search budget exhausted")
+    @sat.SatOutcome::Unknown =>
+      fail("contradictory units search budget exhausted")
+  }
+  let branching_contradiction = @sat.CnfFormula::new(2, [
+    [1, 2],
+    [-1, 2],
+    [1, -2],
+    [-1, -2],
+  ]).unwrap()
+  let limited = branching_contradiction.solve(
+    @sat.SolverConfig::new(1).unwrap(),
+  )
+  match limited.outcome {
+    @sat.SatOutcome::Unknown => {
+      if limited.stats.search_nodes != 1 {
+        fail("budget demonstration did not respect the one-node limit")
+      }
+      println("four-clause contradiction, budget 1: Unknown (not a proof)")
+    }
+    _ => fail("budget demonstration unexpectedly completed within one node")
+  }
+  match branching_contradiction.solve(config).outcome {
+    @sat.SatOutcome::Unsatisfiable =>
+      println("same four clauses, budget 10000: UNSAT")
+    _ => fail("larger-budget demonstration did not prove the contradiction")
   }
 }
 
 ///|
 /// Solve one four-bit unsigned wraparound constraint through the QF_BV layer.
-fn show_qfbv_example() -> Unit {
+fn show_qfbv_example() -> Unit raise {
   let x = @smt.BitVec::variable(4, 1).unwrap()
   let three = @smt.BitVec::constant(4, 3).unwrap()
   let two = @smt.BitVec::constant(4, 2).unwrap()
-  let assertion = x.add_wrapping(three).unwrap().equal(two).unwrap()
+  let sum = x.add_wrapping(three).unwrap()
+  let assertion = sum.equal(two).unwrap()
   let problem = @smt.QfBvProblem::new(4, assertion).unwrap()
   println("\nBounded QF_BV demonstration")
   match problem.solve(@sat.SolverConfig::new(10_000).unwrap()) {
     @smt.QfBvOutcome::Satisfiable(model) => {
-      let mut value = 0
-      for index in 0..<4 {
-        if model[index] {
-          value = value | (1 << index)
-        }
+      let value = x.evaluate(model).unwrap()
+      if value != 15 || (value + 3) % 16 != 2 || sum.evaluate(model) != Some(2) {
+        fail("QF_BV demonstration model failed concrete wraparound replay")
       }
       println("four-bit x + 3 = 2 modulo 16; model x = \{value}")
+      println("QF_BV model replay: (15 + 3) % 16 = 2")
     }
-    @smt.QfBvOutcome::Unsatisfiable => println("unexpected QF_BV UNSAT result")
-    @smt.QfBvOutcome::Unknown => println("QF_BV search budget exhausted")
-    @smt.QfBvOutcome::InvalidInput => println("invalid QF_BV assertion")
+    @smt.QfBvOutcome::Unsatisfiable =>
+      fail("QF_BV demonstration unexpectedly UNSAT")
+    @smt.QfBvOutcome::Unknown =>
+      fail("QF_BV demonstration search budget exhausted")
+    @smt.QfBvOutcome::InvalidInput =>
+      fail("invalid QF_BV demonstration assertion")
   }
 }
 

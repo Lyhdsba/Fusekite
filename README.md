@@ -118,6 +118,15 @@ Device assumptions and full truth tables are in
 [`circuits/WORKED.md`](circuits/WORKED.md); the sourced catalog is described in
 [`parts/74hc-catalog.md`](parts/74hc-catalog.md).
 
+The standalone solver examples also check their results: the SAT model is
+replayed against all three input clauses; contradictory units must be UNSAT;
+a four-clause contradiction must return `Unknown` at a one-node budget and
+UNSAT at 10,000. The four-bit example decodes `x = 15` through
+`BitVec::evaluate` and checks both concrete modulo-16 arithmetic and the
+evaluated sum. Unexpected outcomes fail the executable and its existing CI
+step. For the exact inputs, API sequence, and expected output, see the
+[CNF and counter scenario walkthrough](docs/使用指南.md#独立求解场景cnf-与四位计数器).
+
 ## Three complete usage scenarios
 
 All three scenarios run with `moon run cmd/main`. Row numbers use the first
