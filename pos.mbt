@@ -10,12 +10,12 @@ pub struct PosClause {
 /// An exact minimum two-level product-of-sums result.
 /// Clauses and essential clauses are stored privately; accessors return copies.
 pub struct PosSolution {
-  priv input_count : Int
+  priv input_count : Int32
   priv selected : Array[PosClause]
   priv essential : Array[PosClause]
-  clause_count : Int
-  literal_count : Int
-  explored_states : Int
+  clause_count : Int32
+  literal_count : Int32
+  explored_states : Int32
 }
 
 ///|
@@ -26,13 +26,13 @@ pub fn PosClause::pattern(self : PosClause) -> String {
 }
 
 ///|
-pub fn PosClause::literal_count(self : PosClause) -> Int {
+pub fn PosClause::literal_count(self : PosClause) -> Int32 {
   self.zero_cube.literal_count()
 }
 
 ///|
 /// Evaluate a clause; return None for a row outside its truth-table range.
-pub fn PosClause::evaluate(self : PosClause, row : Int) -> Bool? {
+pub fn PosClause::evaluate(self : PosClause, row : Int32) -> Bool? {
   if row < 0 || row >= 1 << self.zero_cube.width {
     return None
   }
@@ -40,7 +40,7 @@ pub fn PosClause::evaluate(self : PosClause, row : Int) -> Bool? {
 }
 
 ///|
-pub fn PosSolution::variable_count(self : PosSolution) -> Int {
+pub fn PosSolution::variable_count(self : PosSolution) -> Int32 {
   self.input_count
 }
 
@@ -64,7 +64,7 @@ pub fn PosSolution::patterns(self : PosSolution) -> Array[String] {
 /// Evaluate the selected product of sums, including its chosen don't-care values.
 /// An empty product is true. An empty sum clause makes the product false.
 /// Return None for a row outside the validated 1–8 input truth-table range.
-pub fn PosSolution::evaluate(self : PosSolution, row : Int) -> Bool? {
+pub fn PosSolution::evaluate(self : PosSolution, row : Int32) -> Bool? {
   if row < 0 || row >= 1 << self.input_count {
     return None
   }
@@ -85,7 +85,7 @@ pub fn PosSolution::evaluate(self : PosSolution, row : Int) -> Bool? {
 /// All-one tables and tables with no cared rows select an empty product (true).
 /// All-zero tables select one empty sum clause (false).
 pub fn minimize_pos(spec : TruthSpec) -> PosSolution {
-  let off_set : Array[Int] = []
+  let off_set : Array[Int32] = []
   for row in 0..<(1 << spec.input_count) {
     if !contains(spec.on_set, row) && !contains(spec.dont_cares, row) {
       off_set.push(row)

@@ -2,13 +2,13 @@
 /// A prime-implicant chart. Each entry in `coverers` corresponds to the
 /// minterm at the same index and contains indexes into `primes`.
 pub struct CoverageChart {
-  minterms : Array[Int]
+  minterms : Array[Int32]
   primes : Array[Cube]
-  coverers : Array[Array[Int]]
+  coverers : Array[Array[Int32]]
 }
 
 ///|
-fn compare_cubes(left : Cube, right : Cube) -> Int {
+fn compare_cubes(left : Cube, right : Cube) -> Int32 {
   for bit in 0..<left.width {
     let shift = left.width - bit - 1
     let left_rank = if ((left.wildcard >> shift) & 1) == 1 {
@@ -44,9 +44,9 @@ pub fn make_coverage_chart(
 ) -> CoverageChart {
   let primes = refinement.primes.copy()
   primes.sort_by(compare_cubes)
-  let coverers : Array[Array[Int]] = []
+  let coverers : Array[Array[Int32]] = []
   for row in spec.on_set {
-    let row_coverers : Array[Int] = []
+    let row_coverers : Array[Int32] = []
     for i in 0..<primes.length() {
       if primes[i].covers_row(row) {
         row_coverers.push(i)
@@ -61,8 +61,8 @@ pub fn make_coverage_chart(
 /// Return every prime implicant that is the sole coverer of at least one
 /// required minterm. The result follows the chart's deterministic pattern
 /// order and contains no duplicates.
-pub fn CoverageChart::essential_indices(self : CoverageChart) -> Array[Int] {
-  let essential : Array[Int] = []
+pub fn CoverageChart::essential_indices(self : CoverageChart) -> Array[Int32] {
+  let essential : Array[Int32] = []
   for coverers in self.coverers {
     if coverers.length() == 1 {
       let index = coverers[0]

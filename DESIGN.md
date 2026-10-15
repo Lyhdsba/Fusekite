@@ -122,9 +122,9 @@ literal or a one-product sum needs no AND or OR gate in this structural model.
 packages; it does not choose a part.
 
 The public `GateCost::new` rejects negative counts and totals that exceed the
-signed 32-bit `Int` range. Package rounding uses quotient and remainder so the
+signed 32-bit `Int32` range. Package rounding uses quotient and remainder so the
 ceiling calculation does not overflow when the requested gate count is near
-`Int`'s maximum. Regression tests cover that numeric boundary and sparse
+`Int32`'s maximum. Regression tests cover that numeric boundary and sparse
 eight-input truth tables, including row 255 where the most significant bit is
 set.
 

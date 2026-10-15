@@ -3,17 +3,17 @@
 ///
 /// This is a structural estimate, not a timing, power, area, or price model.
 pub struct GateCost {
-  inverters : Int
-  and2_gates : Int
-  or2_gates : Int
+  inverters : Int32
+  and2_gates : Int32
+  or2_gates : Int32
 }
 
 ///|
 /// Create a gate-count value, rejecting negative counts.
 pub fn GateCost::new(
-  inverters : Int,
-  and2_gates : Int,
-  or2_gates : Int,
+  inverters : Int32,
+  and2_gates : Int32,
+  or2_gates : Int32,
 ) -> GateCost? {
   if inverters < 0 || and2_gates < 0 || or2_gates < 0 {
     return None
@@ -43,7 +43,7 @@ pub fn estimate_sop_gate_cost(
   }
   for cube in solution.selected {
     let literals = cube.literal_count()
-    and2_gates += Int::max(0, literals - 1)
+    and2_gates += Int32::max(0, literals - 1)
     for bit in 0..<spec.input_count {
       if ((cube.wildcard >> bit) & 1) == 0 && ((cube.value >> bit) & 1) == 0 {
         inverted_inputs[bit] = true
@@ -56,20 +56,20 @@ pub fn estimate_sop_gate_cost(
       inverters += 1
     }
   }
-  let or2_gates = Int::max(0, solution.selected.length() - 1)
+  let or2_gates = Int32::max(0, solution.selected.length() - 1)
   { inverters, and2_gates, or2_gates, }
 }
 
 ///|
 /// Return the total number of primitive gates in this estimate.
-pub fn GateCost::total(self : GateCost) -> Int {
+pub fn GateCost::total(self : GateCost) -> Int32 {
   self.inverters + self.and2_gates + self.or2_gates
 }
 
 ///|
 /// Round a nonnegative gate count up to whole packages of `channels` gates.
 /// Return `None` for invalid counts or a package without usable channels.
-pub fn GateCost::packages_for(gates : Int, channels : Int) -> Int? {
+pub fn GateCost::packages_for(gates : Int32, channels : Int32) -> Int32? {
   if gates < 0 || channels <= 0 {
     return None
   }

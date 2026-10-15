@@ -8,23 +8,23 @@ pub enum BddOp {
 
 ///|
 priv struct BddNode {
-  variable : Int
-  low : Int
-  high : Int
+  variable : Int32
+  low : Int32
+  high : Int32
 }
 
 ///|
 priv struct BddApplyEntry {
   operation : BddOp
-  left : Int
-  right : Int
-  result : Int
+  left : Int32
+  right : Int32
+  result : Int32
 }
 
 ///|
 priv struct BddNegateEntry {
-  node : Int
-  result : Int
+  node : Int32
+  result : Int32
 }
 
 ///|
@@ -36,7 +36,7 @@ priv struct BddNegateEntry {
 /// can still require exponentially many nodes, so callers should treat node
 /// growth as input-dependent.
 pub struct BddManager {
-  priv variable_count : Int
+  priv variable_count : Int32
   priv nodes : Array[BddNode]
   priv apply_cache : Array[BddApplyEntry]
   priv negate_cache : Array[BddNegateEntry]
@@ -44,7 +44,7 @@ pub struct BddManager {
 
 ///|
 /// Create an ROBDD manager with a fixed variable order.
-pub fn BddManager::new(variable_count : Int) -> BddManager? {
+pub fn BddManager::new(variable_count : Int32) -> BddManager? {
   if variable_count < 1 || variable_count > 32 {
     return None
   }
@@ -57,18 +57,21 @@ pub fn BddManager::new(variable_count : Int) -> BddManager? {
 
 ///|
 /// Return the number of non-terminal nodes currently stored.
-pub fn BddManager::node_count(self : BddManager) -> Int {
+pub fn BddManager::node_count(self : BddManager) -> Int32 {
   self.nodes.length() - 2
 }
 
 ///|
 /// Count non-terminal nodes reachable from a node ID in this manager.
-pub fn BddManager::reachable_node_count(self : BddManager, root : Int) -> Int? {
+pub fn BddManager::reachable_node_count(
+  self : BddManager,
+  root : Int32,
+) -> Int32? {
   if !self.valid_node(root) {
     return None
   }
   let visited : Array[Bool] = Array::make(self.nodes.length(), false)
-  let pending : Array[Int] = [root]
+  let pending : Array[Int32] = [root]
   let mut count = 0
   while pending.length() > 0 {
     let node_id = pending.pop().unwrap()
@@ -83,7 +86,7 @@ pub fn BddManager::reachable_node_count(self : BddManager, root : Int) -> Int? {
 }
 
 ///|
-fn BddManager::valid_node(self : BddManager, node : Int) -> Bool {
+fn BddManager::valid_node(self : BddManager, node : Int32) -> Bool {
   node >= 0 && node < self.nodes.length()
 }
 
@@ -100,10 +103,10 @@ fn same_bdd_op(left : BddOp, right : BddOp) -> Bool {
 ///|
 fn BddManager::make_node(
   self : BddManager,
-  variable : Int,
-  low : Int,
-  high : Int,
-) -> Int {
+  variable : Int32,
+  low : Int32,
+  high : Int32,
+) -> Int32 {
   if low == high {
     return low
   }
@@ -119,7 +122,7 @@ fn BddManager::make_node(
 
 ///|
 /// Return the canonical node for a variable index, or `None` when out of range.
-pub fn BddManager::variable(self : BddManager, index : Int) -> Int? {
+pub fn BddManager::variable(self : BddManager, index : Int32) -> Int32? {
   if index < 0 || index >= self.variable_count {
     return None
   }
@@ -130,9 +133,9 @@ pub fn BddManager::variable(self : BddManager, index : Int) -> Int? {
 fn BddManager::terminal_result(
   _self : BddManager,
   operation : BddOp,
-  left : Int,
-  right : Int,
-) -> Int {
+  left : Int32,
+  right : Int32,
+) -> Int32 {
   let left_value = left == 1
   let right_value = right == 1
   let result = match operation {
@@ -151,9 +154,9 @@ fn BddManager::terminal_result(
 fn BddManager::apply_valid(
   self : BddManager,
   operation : BddOp,
-  left : Int,
-  right : Int,
-) -> Int {
+  left : Int32,
+  right : Int32,
+) -> Int32 {
   let (first, second) = if left <= right {
     (left, right)
   } else {
@@ -197,7 +200,7 @@ fn BddManager::apply_valid(
   }
   let first_variable = self.nodes[first].variable
   let second_variable = self.nodes[second].variable
-  let variable = Int::min(first_variable, second_variable)
+  let variable = Int32::min(first_variable, second_variable)
   let first_low = if first_variable == variable {
     self.nodes[first].low
   } else {
@@ -231,9 +234,9 @@ fn BddManager::apply_valid(
 pub fn BddManager::apply(
   self : BddManager,
   operation : BddOp,
-  left : Int,
-  right : Int,
-) -> Int? {
+  left : Int32,
+  right : Int32,
+) -> Int32? {
   if !self.valid_node(left) || !self.valid_node(right) {
     return None
   }
@@ -242,7 +245,7 @@ pub fn BddManager::apply(
 
 ///|
 /// Return the canonical complement of a node, or `None` for an invalid ID.
-pub fn BddManager::negate(self : BddManager, node_id : Int) -> Int? {
+pub fn BddManager::negate(self : BddManager, node_id : Int32) -> Int32? {
   if !self.valid_node(node_id) {
     return None
   }
@@ -270,7 +273,7 @@ pub fn BddManager::negate(self : BddManager, node_id : Int) -> Int? {
 /// Returns `None` for an invalid node ID or a vector of the wrong length.
 pub fn BddManager::evaluate(
   self : BddManager,
-  node_id : Int,
+  node_id : Int32,
   values : Array[Bool],
 ) -> Bool? {
   if !self.valid_node(node_id) || values.length() != self.variable_count {
@@ -288,8 +291,8 @@ pub fn BddManager::evaluate(
 /// Check equivalence by canonical node identity within this manager.
 pub fn BddManager::equivalent(
   self : BddManager,
-  left : Int,
-  right : Int,
+  left : Int32,
+  right : Int32,
 ) -> Bool? {
   if !self.valid_node(left) || !self.valid_node(right) {
     return None
@@ -343,7 +346,7 @@ pub fn verify_sop_with_bdd(spec : TruthSpec, solution : CoverSolution) -> Bool {
 }
 
 ///|
-fn bdd_row_term(manager : BddManager, row : Int, width : Int) -> Int {
+fn bdd_row_term(manager : BddManager, row : Int32, width : Int32) -> Int32 {
   let mut term = 1
   for index in 0..<width {
     let shift = width - index - 1
@@ -432,10 +435,10 @@ test "ROBDD keeps parity compact beyond truth-table input range" {
 
 ///|
 test "ROBDD satisfiability agrees with the DPLL backend on every two-variable CNF" {
-  let clause_universe : Array[Array[Int]] = []
+  let clause_universe : Array[Array[Int32]] = []
   for code in 1..<9 {
     let mut encoded = code
-    let clause : Array[Int] = []
+    let clause : Array[Int32] = []
     for variable in 1..<=2 {
       let state = encoded % 3
       encoded /= 3
@@ -449,7 +452,7 @@ test "ROBDD satisfiability agrees with the DPLL backend on every two-variable CN
   }
   let config = @sat.SolverConfig::new(100).unwrap()
   for formula_bits in 0..<256 {
-    let clauses : Array[Array[Int]] = []
+    let clauses : Array[Array[Int32]] = []
     let manager = BddManager::new(2).unwrap()
     let variable_a = manager.variable(0).unwrap()
     let variable_b = manager.variable(1).unwrap()
@@ -461,7 +464,7 @@ test "ROBDD satisfiability agrees with the DPLL backend on every two-variable CN
         clauses.push(clause)
         let mut clause_root = 0
         for literal in clause {
-          let variable = variables[Int::abs(literal) - 1]
+          let variable = variables[Int32::abs(literal) - 1]
           let term = if literal > 0 {
             variable
           } else {

@@ -1,8 +1,8 @@
 ///|
 fn emit_case(
   operation : String,
-  width : Int,
-  target : Int,
+  width : Int32,
+  target : Int32,
   config : @sat.SolverConfig,
 ) -> Unit raise {
   let x = @smt.BitVec::variable(width, 1).unwrap()

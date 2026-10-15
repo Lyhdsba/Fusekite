@@ -193,6 +193,13 @@ The root MoonBit package contains the reusable ROBDD manager in `bdd.mbt`, SAT-b
 
 ## Build and test
 
+Use Moon `0.1.20261012` / moonc `v0.10.15+943464bfa`, the toolchain verified
+for the October initial-review materials. The current formatter spells the
+32-bit integer type `Int32`; older SDK formatting results can differ. CI
+installs the current stable SDK and prints its version, so check that version
+when reproducing a failure. The verified version is not a compatibility claim
+for every past or future SDK.
+
 ```sh
 moon fmt --check
 moon check --deny-warn

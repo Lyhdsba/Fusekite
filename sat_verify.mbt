@@ -8,7 +8,7 @@ pub enum SatEquivalence {
 }
 
 ///|
-fn row_expression(row : Int, width : Int) -> @sat.BoolExpr {
+fn row_expression(row : Int32, width : Int32) -> @sat.BoolExpr {
   let mut expression = @sat.BoolExpr::Constant(true)
   for index in 0..<width {
     let shift = width - index - 1
@@ -24,7 +24,7 @@ fn row_expression(row : Int, width : Int) -> @sat.BoolExpr {
 }
 
 ///|
-fn row_set_expression(rows : Array[Int], width : Int) -> @sat.BoolExpr {
+fn row_set_expression(rows : Array[Int32], width : Int32) -> @sat.BoolExpr {
   let mut expression = @sat.BoolExpr::Constant(false)
   for row in rows {
     expression = @sat.BoolExpr::Or(expression, row_expression(row, width))

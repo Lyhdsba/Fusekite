@@ -5,7 +5,7 @@ pub struct CircuitExample {
   name : String
   input_labels : Array[String]
   spec : @fusekite.TruthSpec
-  priv expected_outputs : Array[Int]
+  priv expected_outputs : Array[Int32]
   assumptions : String
 }
 
@@ -13,9 +13,9 @@ pub struct CircuitExample {
 fn make_example(
   name : String,
   input_labels : Array[String],
-  on_set : Array[Int],
-  dont_cares : Array[Int],
-  expected_outputs : Array[Int],
+  on_set : Array[Int32],
+  dont_cares : Array[Int32],
+  expected_outputs : Array[Int32],
   assumptions : String,
 ) -> CircuitExample? {
   if expected_outputs.length() != 1 << input_labels.length() {
@@ -47,7 +47,7 @@ fn make_example(
 
 ///|
 /// Return a copy of the independently authored expected output vector.
-pub fn CircuitExample::expected_outputs(self : CircuitExample) -> Array[Int] {
+pub fn CircuitExample::expected_outputs(self : CircuitExample) -> Array[Int32] {
   self.expected_outputs.copy()
 }
 

@@ -4,8 +4,8 @@
 /// denotes its complement. Empty clauses are allowed and make the formula
 /// unsatisfiable. Tautological clauses are removed during construction.
 pub struct CnfFormula {
-  priv variable_count : Int
-  priv clauses : Array[Array[Int]]
+  priv variable_count : Int32
+  priv clauses : Array[Array[Int32]]
 }
 
 ///|
@@ -13,7 +13,7 @@ pub struct CnfFormula {
 /// Tseitin variables.
 pub(all) enum BoolExpr {
   Constant(Bool)
-  Variable(Int)
+  Variable(Int32)
   Not(BoolExpr)
   And(BoolExpr, BoolExpr)
   Or(BoolExpr, BoolExpr)
@@ -34,7 +34,7 @@ pub enum DimacsError {
 ///|
 /// Search bound for the deterministic DPLL solver.
 pub struct SolverConfig {
-  priv max_search_nodes : Int
+  priv max_search_nodes : Int32
 }
 
 ///|
@@ -49,10 +49,10 @@ pub enum SatOutcome {
 ///|
 /// Counters collected while solving one formula.
 pub struct SolverStats {
-  search_nodes : Int
-  decisions : Int
-  propagations : Int
-  conflicts : Int
+  search_nodes : Int32
+  decisions : Int32
+  propagations : Int32
+  conflicts : Int32
 }
 
 ///|
@@ -64,29 +64,29 @@ pub struct SatReport {
 
 ///|
 priv struct SearchState {
-  clauses : Array[Array[Int]]
-  watch_lists : Array[Array[Int]]
-  watch0 : Array[Int]
-  watch1 : Array[Int]
-  mut search_nodes : Int
-  mut decisions : Int
-  mut propagations : Int
-  mut conflicts : Int
+  clauses : Array[Array[Int32]]
+  watch_lists : Array[Array[Int32]]
+  watch0 : Array[Int32]
+  watch1 : Array[Int32]
+  mut search_nodes : Int32
+  mut decisions : Int32
+  mut propagations : Int32
+  mut conflicts : Int32
 }
 
 ///|
 priv struct CnfEncoder {
-  mut variable_count : Int
-  clauses : Array[Array[Int]]
-  source_variable_count : Int
-  mut expression_nodes : Int
+  mut variable_count : Int32
+  clauses : Array[Array[Int32]]
+  source_variable_count : Int32
+  mut expression_nodes : Int32
   expression_cache : Array[CnfCacheEntry]
 }
 
 ///|
 priv struct CnfCacheEntry {
   expression : BoolExpr
-  literal : Int
+  literal : Int32
 }
 
 ///|
@@ -97,7 +97,7 @@ priv enum SearchResult {
 }
 
 ///|
-fn same_clause(left : Array[Int], right : Array[Int]) -> Bool {
+fn same_clause(left : Array[Int32], right : Array[Int32]) -> Bool {
   if left.length() != right.length() {
     return false
   }
@@ -117,15 +117,15 @@ fn same_clause(left : Array[Int], right : Array[Int]) -> Bool {
 /// and tautological clauses are omitted. A clause containing no literals is
 /// preserved as an immediate contradiction.
 pub fn CnfFormula::new(
-  variable_count : Int,
-  clauses : Array[Array[Int]],
+  variable_count : Int32,
+  clauses : Array[Array[Int32]],
 ) -> CnfFormula? {
   if variable_count < 0 || variable_count > 4096 {
     return None
   }
-  let normalized_clauses : Array[Array[Int]] = []
+  let normalized_clauses : Array[Array[Int32]] = []
   for clause in clauses {
-    let normalized : Array[Int] = []
+    let normalized : Array[Int32] = []
     let mut tautology = false
     for literal in clause {
       if literal == 0 || literal > variable_count || literal < -variable_count {
@@ -156,7 +156,7 @@ pub fn CnfFormula::new(
 ///|
 /// Create a positive search budget. Values above one million are rejected to
 /// make accidental unbounded searches harder to trigger.
-pub fn SolverConfig::new(max_search_nodes : Int) -> SolverConfig? {
+pub fn SolverConfig::new(max_search_nodes : Int32) -> SolverConfig? {
   if max_search_nodes < 1 || max_search_nodes > 1_000_000 {
     return None
   }
@@ -164,7 +164,7 @@ pub fn SolverConfig::new(max_search_nodes : Int) -> SolverConfig? {
 }
 
 ///|
-fn CnfEncoder::fresh_literal(self : CnfEncoder) -> Int? {
+fn CnfEncoder::fresh_literal(self : CnfEncoder) -> Int32? {
   if self.variable_count >= 4096 {
     return None
   }
@@ -196,8 +196,8 @@ fn same_bool_expr(left : BoolExpr, right : BoolExpr) -> Bool {
 fn CnfEncoder::encode(
   self : CnfEncoder,
   expression : BoolExpr,
-  depth : Int,
-) -> Int? {
+  depth : Int32,
+) -> Int32? {
   for index in 0..<self.expression_cache.length() {
     let entry = self.expression_cache[index]
     if same_bool_expr(entry.expression, expression) {
@@ -302,7 +302,7 @@ fn CnfEncoder::encode(
 /// as directly constructed formulas. Distinct expression nodes are capped at
 /// 100,000 and nesting at 1,024 levels.
 pub fn CnfFormula::from_expression(
-  variable_count : Int,
+  variable_count : Int32,
   expression : BoolExpr,
 ) -> CnfFormula? {
   if variable_count < 0 || variable_count > 256 {
@@ -344,7 +344,7 @@ fn dimacs_tokens(line : StringView) -> Array[String] {
 }
 
 ///|
-fn parse_dimacs_integer(token : String, max_magnitude : Int) -> Int? {
+fn parse_dimacs_integer(token : String, max_magnitude : Int32) -> Int32? {
   let characters = token.to_array()
   if characters.length() == 0 {
     return None
@@ -391,8 +391,8 @@ pub fn CnfFormula::parse_dimacs(
   let mut header_seen = false
   let mut variable_count = 0
   let mut declared_clause_count = 0
-  let clauses : Array[Array[Int]] = []
-  let current_clause : Array[Int] = []
+  let clauses : Array[Array[Int32]] = []
+  let current_clause : Array[Int32] = []
   for line in text.split("\n") {
     let tokens = dimacs_tokens(line)
     if tokens.length() == 0 || tokens[0] == "c" {
@@ -449,19 +449,19 @@ pub fn CnfFormula::parse_dimacs(
 
 ///|
 /// Return the declared number of variables.
-pub fn CnfFormula::variable_count(self : CnfFormula) -> Int {
+pub fn CnfFormula::variable_count(self : CnfFormula) -> Int32 {
   self.variable_count
 }
 
 ///|
 /// Return defensive copies of the normalized clauses.
-pub fn CnfFormula::clauses(self : CnfFormula) -> Array[Array[Int]] {
+pub fn CnfFormula::clauses(self : CnfFormula) -> Array[Array[Int32]] {
   self.clauses.map(clause => clause.copy())
 }
 
 ///|
-fn literal_is_satisfied(literal : Int, assignment : Array[Int]) -> Bool {
-  let value = assignment[Int::abs(literal) - 1]
+fn literal_is_satisfied(literal : Int32, assignment : Array[Int32]) -> Bool {
+  let value = assignment[Int32::abs(literal) - 1]
   if literal > 0 {
     value == 1
   } else {
@@ -470,8 +470,8 @@ fn literal_is_satisfied(literal : Int, assignment : Array[Int]) -> Bool {
 }
 
 ///|
-fn watch_index(literal : Int) -> Int {
-  let base = (Int::abs(literal) - 1) * 2
+fn watch_index(literal : Int32) -> Int32 {
+  let base = (Int32::abs(literal) - 1) * 2
   if literal > 0 {
     base
   } else {
@@ -481,11 +481,11 @@ fn watch_index(literal : Int) -> Int {
 
 ///|
 fn enqueue_literal(
-  literal : Int,
-  assignment : Array[Int],
-  trail : Array[Int],
+  literal : Int32,
+  assignment : Array[Int32],
+  trail : Array[Int32],
 ) -> Bool {
-  let variable = Int::abs(literal) - 1
+  let variable = Int32::abs(literal) - 1
   let required_value = if literal > 0 { 1 } else { 0 }
   if assignment[variable] == -1 {
     assignment[variable] = required_value
@@ -499,8 +499,8 @@ fn enqueue_literal(
 ///|
 fn initialize_watches(
   state : SearchState,
-  assignment : Array[Int],
-  trail : Array[Int],
+  assignment : Array[Int32],
+  trail : Array[Int32],
 ) -> Bool {
   for clause_index in 0..<state.clauses.length() {
     let clause = state.clauses[clause_index]
@@ -526,16 +526,16 @@ fn initialize_watches(
 ///|
 fn propagate_watched(
   state : SearchState,
-  assignment : Array[Int],
-  trail : Array[Int],
-  qhead : Int,
-) -> (Bool, Int) {
+  assignment : Array[Int32],
+  trail : Array[Int32],
+  qhead : Int32,
+) -> (Bool, Int32) {
   let mut queue_head = qhead
   while queue_head < trail.length() {
     let false_literal = -trail[queue_head]
     let false_watch_index = watch_index(false_literal)
     let current_watchers = state.watch_lists[false_watch_index].copy()
-    let remaining_watchers : Array[Int] = []
+    let remaining_watchers : Array[Int32] = []
     let mut conflict = false
     for clause_index in current_watchers {
       let clause = state.clauses[clause_index]
@@ -557,11 +557,11 @@ fn propagate_watched(
           if literal_is_satisfied(other_literal, assignment) {
             remaining_watchers.push(clause_index)
           } else {
-            let mut replacement : Int? = None
+            let mut replacement : Int32? = None
             for position in 0..<clause.length() {
               if position != false_position && position != other_position {
                 let candidate = clause[position]
-                let value = assignment[Int::abs(candidate) - 1]
+                let value = assignment[Int32::abs(candidate) - 1]
                 if value == -1 || literal_is_satisfied(candidate, assignment) {
                   if replacement is None {
                     replacement = Some(position)
@@ -583,7 +583,7 @@ fn propagate_watched(
               }
               None => {
                 remaining_watchers.push(clause_index)
-                let other_value = assignment[Int::abs(other_literal) - 1]
+                let other_value = assignment[Int32::abs(other_literal) - 1]
                 if other_value == -1 {
                   if enqueue_literal(other_literal, assignment, trail) {
                     state.propagations += 1
@@ -611,9 +611,9 @@ fn propagate_watched(
 
 ///|
 fn first_open_literal(
-  clauses : Array[Array[Int]],
-  assignment : Array[Int],
-) -> Int? {
+  clauses : Array[Array[Int32]],
+  assignment : Array[Int32],
+) -> Int32? {
   for clause in clauses {
     let mut satisfied = false
     for literal in clause {
@@ -623,7 +623,7 @@ fn first_open_literal(
     }
     if !satisfied {
       for literal in clause {
-        if assignment[Int::abs(literal) - 1] == -1 {
+        if assignment[Int32::abs(literal) - 1] == -1 {
           return Some(literal)
         }
       }
@@ -633,17 +633,17 @@ fn first_open_literal(
 }
 
 ///|
-fn complete_model(assignment : Array[Int]) -> Array[Bool] {
+fn complete_model(assignment : Array[Int32]) -> Array[Bool] {
   assignment.map(value => value == 1)
 }
 
 ///|
 fn search(
   state : SearchState,
-  assignment : Array[Int],
-  trail : Array[Int],
-  qhead : Int,
-  max_search_nodes : Int,
+  assignment : Array[Int32],
+  trail : Array[Int32],
+  qhead : Int32,
+  max_search_nodes : Int32,
 ) -> SearchResult {
   if state.search_nodes >= max_search_nodes {
     return BudgetExhausted
@@ -659,7 +659,7 @@ fn search(
     Some(literal) => literal
     None => return Found(complete_model(assignment))
   }
-  let variable = Int::abs(branch_literal) - 1
+  let variable = Int32::abs(branch_literal) - 1
   state.decisions += 1
 
   let first_assignment = assignment.copy()
@@ -703,9 +703,9 @@ fn search(
 /// The solver returns a complete Boolean model on SAT and `Unknown` if the
 /// configured search-node budget is exhausted before a proof is found.
 pub fn CnfFormula::solve(self : CnfFormula, config : SolverConfig) -> SatReport {
-  let assignment : Array[Int] = Array::make(self.variable_count, -1)
-  let trail : Array[Int] = []
-  let watch_lists : Array[Array[Int]] = []
+  let assignment : Array[Int32] = Array::make(self.variable_count, -1)
+  let trail : Array[Int32] = []
+  let watch_lists : Array[Array[Int32]] = []
   for _ in 0..<(self.variable_count * 2) {
     watch_lists.push([])
   }
@@ -749,7 +749,7 @@ pub fn CnfFormula::accepts(self : CnfFormula, model : Array[Bool]) -> Bool {
   for clause in self.clauses {
     let mut satisfied = false
     for literal in clause {
-      let value = model[Int::abs(literal) - 1]
+      let value = model[Int32::abs(literal) - 1]
       if (literal > 0 && value) || (literal < 0 && !value) {
         satisfied = true
       }
@@ -768,7 +768,7 @@ test "CNF validates bounds and owns normalized clause data" {
   assert_true(CnfFormula::new(2, [[0]]) is None)
   assert_true(CnfFormula::new(2, [[3]]) is None)
   assert_true(SolverConfig::new(0) is None)
-  let input : Array[Array[Int]] = [[2, 1, 2], [1, -1], [-2, -2], [1, 2]]
+  let input : Array[Array[Int32]] = [[2, 1, 2], [1, -1], [-2, -2], [1, 2]]
   let formula = CnfFormula::new(2, input).unwrap()
   input[0].push(-2)
   assert_eq(formula.clauses(), [[1, 2], [-2]])
@@ -867,8 +867,8 @@ test "DPLL backtracks and returns a model that satisfies every clause" {
 
 ///|
 fn oracle_satisfiable(
-  variable_count : Int,
-  clauses : Array[Array[Int]],
+  variable_count : Int32,
+  clauses : Array[Array[Int32]],
 ) -> Bool {
   for bits in 0..<(1 << variable_count) {
     let model : Array[Bool] = []
@@ -879,7 +879,7 @@ fn oracle_satisfiable(
     for clause in clauses {
       let mut satisfied = false
       for literal in clause {
-        let value = model[Int::abs(literal) - 1]
+        let value = model[Int32::abs(literal) - 1]
         if (literal > 0 && value) || (literal < 0 && !value) {
           satisfied = true
         }
@@ -897,10 +897,10 @@ fn oracle_satisfiable(
 
 ///|
 test "two-variable CNFs agree with exhaustive truth-assignment oracle" {
-  let clause_universe : Array[Array[Int]] = []
+  let clause_universe : Array[Array[Int32]] = []
   for code in 1..<9 {
     let mut encoded = code
-    let clause : Array[Int] = []
+    let clause : Array[Int32] = []
     for variable in 1..<=2 {
       let state = encoded % 3
       encoded /= 3
@@ -914,7 +914,7 @@ test "two-variable CNFs agree with exhaustive truth-assignment oracle" {
   }
   let config = SolverConfig::new(100).unwrap()
   for formula_bits in 0..<256 {
-    let clauses : Array[Array[Int]] = []
+    let clauses : Array[Array[Int32]] = []
     for index in 0..<clause_universe.length() {
       if ((formula_bits >> index) & 1) == 1 {
         clauses.push(clause_universe[index])
@@ -935,10 +935,10 @@ test "two-variable CNFs agree with exhaustive truth-assignment oracle" {
 
 ///|
 test "sampled three-variable CNFs agree with exhaustive truth assignments" {
-  let clause_universe : Array[Array[Int]] = []
+  let clause_universe : Array[Array[Int32]] = []
   for code in 1..<27 {
     let mut encoded = code
-    let clause : Array[Int] = []
+    let clause : Array[Int32] = []
     for variable in 1..<=3 {
       let state = encoded % 3
       encoded /= 3
@@ -952,7 +952,7 @@ test "sampled three-variable CNFs agree with exhaustive truth assignments" {
   }
   let config = SolverConfig::new(1000).unwrap()
   for seed in 0..<1024 {
-    let clauses : Array[Array[Int]] = []
+    let clauses : Array[Array[Int32]] = []
     for index in 0..<clause_universe.length() {
       let selector = (seed * 97 + index * 193 + seed / 3) % 13
       if selector < 6 {

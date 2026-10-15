@@ -3,31 +3,31 @@
 pub struct CoverSolution {
   selected : Array[Cube]
   essential : Array[Cube]
-  term_count : Int
-  literal_count : Int
-  explored_states : Int
+  term_count : Int32
+  literal_count : Int32
+  explored_states : Int32
 }
 
 ///|
 priv struct CoverSearchState {
-  mut best_indices : Array[Int]
-  mut best_literal_count : Int
-  mut explored_states : Int
+  mut best_indices : Array[Int32]
+  mut best_literal_count : Int32
+  mut explored_states : Int32
 }
 
 ///|
-fn contains_index(indices : Array[Int], target : Int) -> Bool {
+fn contains_index(indices : Array[Int32], target : Int32) -> Bool {
   indices.contains(target)
 }
 
 ///|
-fn copy_indices(indices : Array[Int]) -> Array[Int] {
+fn copy_indices(indices : Array[Int32]) -> Array[Int32] {
   indices.copy()
 }
 
 ///|
-fn sorted_insert(indices : Array[Int], value : Int) -> Array[Int] {
-  let result : Array[Int] = []
+fn sorted_insert(indices : Array[Int32], value : Int32) -> Array[Int32] {
+  let result : Array[Int32] = []
   let mut inserted = false
   for index in indices {
     if !inserted && value < index {
@@ -43,7 +43,7 @@ fn sorted_insert(indices : Array[Int], value : Int) -> Array[Int] {
 }
 
 ///|
-fn same_indices(left : Array[Int], right : Array[Int]) -> Bool {
+fn same_indices(left : Array[Int32], right : Array[Int32]) -> Bool {
   if left.length() != right.length() {
     return false
   }
@@ -56,7 +56,7 @@ fn same_indices(left : Array[Int], right : Array[Int]) -> Bool {
 }
 
 ///|
-fn was_visited(visited : Array[Array[Int]], chosen : Array[Int]) -> Bool {
+fn was_visited(visited : Array[Array[Int32]], chosen : Array[Int32]) -> Bool {
   for state in visited {
     if same_indices(state, chosen) {
       return true
@@ -68,8 +68,8 @@ fn was_visited(visited : Array[Array[Int]], chosen : Array[Int]) -> Bool {
 ///|
 fn row_is_covered(
   chart : CoverageChart,
-  row_index : Int,
-  chosen : Array[Int],
+  row_index : Int32,
+  chosen : Array[Int32],
 ) -> Bool {
   for prime_index in chart.coverers[row_index] {
     if contains_index(chosen, prime_index) {
@@ -80,7 +80,7 @@ fn row_is_covered(
 }
 
 ///|
-fn literal_cost(chart : CoverageChart, indices : Array[Int]) -> Int {
+fn literal_cost(chart : CoverageChart, indices : Array[Int32]) -> Int32 {
   let mut total = 0
   for index in indices {
     total += chart.primes[index].literal_count()
@@ -89,7 +89,7 @@ fn literal_cost(chart : CoverageChart, indices : Array[Int]) -> Int {
 }
 
 ///|
-fn lexicographically_before(left : Array[Int], right : Array[Int]) -> Bool {
+fn lexicographically_before(left : Array[Int32], right : Array[Int32]) -> Bool {
   for i in 0..<left.length() {
     if left[i] < right[i] {
       return true
@@ -104,7 +104,7 @@ fn lexicographically_before(left : Array[Int], right : Array[Int]) -> Bool {
 ///|
 fn is_better_cover(
   chart : CoverageChart,
-  candidate : Array[Int],
+  candidate : Array[Int32],
   state : CoverSearchState,
 ) -> Bool {
   if candidate.length() < state.best_indices.length() {
@@ -126,9 +126,9 @@ fn is_better_cover(
 ///|
 fn newly_covered_count(
   chart : CoverageChart,
-  prime_index : Int,
-  chosen : Array[Int],
-) -> Int {
+  prime_index : Int32,
+  chosen : Array[Int32],
+) -> Int32 {
   let mut count = 0
   for row_index in 0..<chart.minterms.length() {
     if !row_is_covered(chart, row_index, chosen) &&
@@ -142,9 +142,9 @@ fn newly_covered_count(
 ///|
 fn search_cover(
   chart : CoverageChart,
-  chosen : Array[Int],
+  chosen : Array[Int32],
   state : CoverSearchState,
-  visited : Array[Array[Int]],
+  visited : Array[Array[Int32]],
 ) -> Unit {
   if was_visited(visited, chosen) {
     return
@@ -154,7 +154,7 @@ fn search_cover(
 
   let mut uncovered_count = 0
   let mut smallest_options = 2147483647
-  let mut branch_options : Array[Int] = []
+  let mut branch_options : Array[Int32] = []
   for row_index in 0..<chart.minterms.length() {
     if !row_is_covered(chart, row_index, chosen) {
       uncovered_count += 1
@@ -185,7 +185,7 @@ fn search_cover(
   let mut maximum_gain = 0
   for prime_index in 0..<chart.primes.length() {
     if !contains_index(chosen, prime_index) {
-      maximum_gain = Int::max(
+      maximum_gain = Int32::max(
         maximum_gain,
         newly_covered_count(chart, prime_index, chosen),
       )
@@ -223,7 +223,7 @@ fn search_cover(
 pub fn minimize_sop(spec : TruthSpec) -> CoverSolution {
   let refinement = refine(spec)
   let chart = make_coverage_chart(spec, refinement)
-  let initial_best : Array[Int] = []
+  let initial_best : Array[Int32] = []
   for index in 0..<chart.primes.length() {
     initial_best.push(index)
   }
@@ -234,7 +234,7 @@ pub fn minimize_sop(spec : TruthSpec) -> CoverSolution {
     best_literal_count: initial_literals,
     explored_states: 0,
   }
-  let visited : Array[Array[Int]] = []
+  let visited : Array[Array[Int32]] = []
   search_cover(chart, essentials, state, visited)
 
   let selected = state.best_indices.map(index => chart.primes[index])
@@ -316,7 +316,7 @@ test "selected cubes cover required rows and avoid required zeroes" {
 ///|
 test "three-input covers match an exhaustive prime-subset oracle" {
   for truth_bits in 0..<256 {
-    let on_set : Array[Int] = []
+    let on_set : Array[Int32] = []
     for row in 0..<8 {
       if ((truth_bits >> row) & 1) == 1 {
         on_set.push(row)

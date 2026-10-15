@@ -3,17 +3,17 @@
 pub struct LogicPart {
   part_number : String
   function : String
-  gates_per_package : Int
-  inputs_per_gate : Int
+  gates_per_package : Int32
+  inputs_per_gate : Int32
   source_url : String
 }
 
 ///|
 /// Package counts for a direct mapping of the SOP gate estimate.
 pub struct PackagePlan {
-  inverters : Int
-  and_packages : Int
-  or_packages : Int
+  inverters : Int32
+  and_packages : Int32
+  or_packages : Int32
 }
 
 ///|
@@ -57,7 +57,10 @@ pub fn standard_74hc_catalog() -> Array[LogicPart] {
 
 ///|
 /// Return whole packages needed for a nonnegative number of gates.
-pub fn LogicPart::packages_required(self : LogicPart, gate_count : Int) -> Int? {
+pub fn LogicPart::packages_required(
+  self : LogicPart,
+  gate_count : Int32,
+) -> Int32? {
   @fusekite.GateCost::packages_for(gate_count, self.gates_per_package)
 }
 

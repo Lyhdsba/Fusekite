@@ -4,18 +4,18 @@
 /// Rows are numbered in binary order: the first variable is the most
 /// significant bit. The all-zero row is row 0.
 pub struct TruthSpec {
-  priv input_count : Int
-  priv on_set : Array[Int]
-  priv dont_cares : Array[Int]
+  priv input_count : Int32
+  priv on_set : Array[Int32]
+  priv dont_cares : Array[Int32]
 }
 
 ///|
 /// A product term encoded with `0`, `1`, and `-` characters.
 /// A dash means that input does not affect the output.
 pub struct Cube {
-  width : Int
-  value : Int
-  wildcard : Int
+  width : Int32
+  value : Int32
+  wildcard : Int32
 }
 
 ///|
@@ -26,7 +26,7 @@ pub struct Refinement {
 }
 
 ///|
-fn contains(values : Array[Int], target : Int) -> Bool {
+fn contains(values : Array[Int32], target : Int32) -> Bool {
   for value in values {
     if value == target {
       return true
@@ -36,7 +36,11 @@ fn contains(values : Array[Int], target : Int) -> Bool {
 }
 
 ///|
-fn has_duplicate_after(values : Array[Int], start : Int, target : Int) -> Bool {
+fn has_duplicate_after(
+  values : Array[Int32],
+  start : Int32,
+  target : Int32,
+) -> Bool {
   for i in start..<values.length() {
     if values[i] == target {
       return true
@@ -66,7 +70,7 @@ fn append_unique(cubes : Array[Cube], candidate : Cube) -> Unit {
 }
 
 ///|
-fn Cube::from_row(row : Int, width : Int) -> Cube {
+fn Cube::from_row(row : Int32, width : Int32) -> Cube {
   { width, value: row, wildcard: 0, }
 }
 
@@ -90,12 +94,12 @@ fn Cube::merge(self : Cube, other : Cube) -> Cube? {
 
 ///|
 /// Return whether this implicant matches a truth-table row.
-pub fn Cube::covers_row(self : Cube, row : Int) -> Bool {
+pub fn Cube::covers_row(self : Cube, row : Int32) -> Bool {
   (row & (((1 << self.width) - 1) ^ self.wildcard)) == self.value
 }
 
 ///|
-fn has_on_set_coverage(cube : Cube, on_set : Array[Int]) -> Bool {
+fn has_on_set_coverage(cube : Cube, on_set : Array[Int32]) -> Bool {
   for row in on_set {
     if cube.covers_row(row) {
       return true
@@ -134,9 +138,9 @@ fn merge_round(current : Array[Cube]) -> (Array[Cube], Array[Bool]) {
 /// The row arrays are copied after validation so caller mutations cannot
 /// invalidate the resulting specification.
 pub fn TruthSpec::new(
-  input_count : Int,
-  on_set : Array[Int],
-  dont_cares : Array[Int],
+  input_count : Int32,
+  on_set : Array[Int32],
+  dont_cares : Array[Int32],
 ) -> TruthSpec? {
   if input_count < 1 || input_count > 8 {
     return None
@@ -164,25 +168,25 @@ pub fn TruthSpec::new(
 
 ///|
 /// Number of input variables in the table.
-pub fn TruthSpec::variable_count(self : TruthSpec) -> Int {
+pub fn TruthSpec::variable_count(self : TruthSpec) -> Int32 {
   self.input_count
 }
 
 ///|
 /// Number of rows whose output is one.
-pub fn TruthSpec::minterm_count(self : TruthSpec) -> Int {
+pub fn TruthSpec::minterm_count(self : TruthSpec) -> Int32 {
   self.on_set.length()
 }
 
 ///|
 /// Return a copy of the required one-rows.
-pub fn TruthSpec::minterms(self : TruthSpec) -> Array[Int] {
+pub fn TruthSpec::minterms(self : TruthSpec) -> Array[Int32] {
   self.on_set.copy()
 }
 
 ///|
 /// Return a copy of the don't-care rows.
-pub fn TruthSpec::dont_care_rows(self : TruthSpec) -> Array[Int] {
+pub fn TruthSpec::dont_care_rows(self : TruthSpec) -> Array[Int32] {
   self.dont_cares.copy()
 }
 
@@ -205,7 +209,7 @@ pub fn Cube::pattern(self : Cube) -> String {
 
 ///|
 /// Count the literals left in this product term.
-pub fn Cube::literal_count(self : Cube) -> Int {
+pub fn Cube::literal_count(self : Cube) -> Int32 {
   let mut wildcards = 0
   for bit in 0..<self.width {
     if ((self.wildcard >> bit) & 1) == 1 {

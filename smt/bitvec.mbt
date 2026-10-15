@@ -1,12 +1,12 @@
 ///|
 pub struct BitVec {
-  priv width : Int
+  priv width : Int32
   priv bits : Array[@sat.BoolExpr]
 }
 
 ///|
 pub struct QfBvProblem {
-  priv source_variable_count : Int
+  priv source_variable_count : Int32
   priv assertion : @sat.BoolExpr
 }
 
@@ -20,7 +20,7 @@ pub enum QfBvOutcome {
 
 ///|
 /// Bits are ordered least-significant first. Width is restricted to 1..8.
-pub fn BitVec::variable(width : Int, first_variable : Int) -> BitVec? {
+pub fn BitVec::variable(width : Int32, first_variable : Int32) -> BitVec? {
   if width < 1 ||
     width > 8 ||
     first_variable < 1 ||
@@ -35,7 +35,7 @@ pub fn BitVec::variable(width : Int, first_variable : Int) -> BitVec? {
 }
 
 ///|
-pub fn BitVec::constant(width : Int, value : Int) -> BitVec? {
+pub fn BitVec::constant(width : Int32, value : Int32) -> BitVec? {
   if width < 1 || width > 8 || value < 0 || value >= 1 << width {
     return None
   }
@@ -47,14 +47,14 @@ pub fn BitVec::constant(width : Int, value : Int) -> BitVec? {
 }
 
 ///|
-pub fn BitVec::width(self : BitVec) -> Int {
+pub fn BitVec::width(self : BitVec) -> Int32 {
   self.width
 }
 
 ///|
 /// Evaluate this term using a QfBvProblem source model. The model is indexed
 /// from SAT variable 1 at array index 0; out-of-range references return None.
-pub fn BitVec::evaluate(self : BitVec, model : Array[Bool]) -> Int? {
+pub fn BitVec::evaluate(self : BitVec, model : Array[Bool]) -> Int32? {
   let mut value = 0
   for index in 0..<self.width {
     match evaluate_boolean(self.bits[index], model) {
@@ -281,7 +281,7 @@ pub fn conjunction(assertions : Array[@sat.BoolExpr]) -> @sat.BoolExpr {
 ///|
 /// Source variables are numbered 1 through source_variable_count.
 pub fn QfBvProblem::new(
-  source_variable_count : Int,
+  source_variable_count : Int32,
   assertion : @sat.BoolExpr,
 ) -> QfBvProblem? {
   if source_variable_count < 0 || source_variable_count > 256 {

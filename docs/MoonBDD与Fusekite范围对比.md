@@ -1,12 +1,16 @@
 # MoonBDD 与 Fusekite：已实现范围对比
 
-核对日期：2026-10-14（Asia/Shanghai）。本文用于九月初审反馈后的第二阶段范围说明，只比较已有能力，不表示两个项目已经集成，也不作为性能排名或赛事复审结论。
+基线核对日期：2026-10-14；十月增量复核：2026-10-15（Asia/Shanghai）。本文用于九月初审反馈后的范围说明，只比较已有能力，不表示两个项目已经集成，也不作为性能排名或赛事复审结论。
 
 ## 版本与证据
 
 - MoonBDD：核对公开仓库提交 [`1c43647849d4b1033edb9743e45199da2746f3d4`](https://github.com/oyjh0381/MoonBDD/tree/1c43647849d4b1033edb9743e45199da2746f3d4)。下文 M1–M4 均固定到该提交，不把未来规划算作实现。
-- Fusekite：实现基线为已推送提交 [`3371536742257f3834f71120b9009dd3ef820539`](https://github.com/Lyhdsba/Fusekite/tree/3371536742257f3834f71120b9009dd3ef820539)。下文 F1–F6 均固定到该提交；本阶段只补充文档，没有增加算法、依赖或跨项目接口。
+- Fusekite：九月实现基线为已推送提交 [`3371536742257f3834f71120b9009dd3ef820539`](https://github.com/Lyhdsba/Fusekite/tree/3371536742257f3834f71120b9009dd3ef820539)。下文 F1–F6 均固定到该提交，表格据此比较；十月 POS 增量另列于下一节，不混入九月成果。
 - 对“未实现”的判断限于这些版本的公开文档、API 和本地源码核对，不推断项目作者今后的计划。
+
+## 十月新增与比较边界
+
+截至 [`9d3c9df`](https://github.com/Lyhdsba/Fusekite/tree/9d3c9df8a75c287daad44afa2407338e4b5fd62e)，Fusekite 新增了单输出、1–8 输入的精确 POS 化简、独立 `PosClause`/`PosSolution`、求值及专用 BDD/SAT 核验，并补齐三个 SOP/POS 电路对照。见固定版本的 [POS 实现](https://github.com/Lyhdsba/Fusekite/blob/9d3c9df8a75c287daad44afa2407338e4b5fd62e/pos.mbt)、[验证器](https://github.com/Lyhdsba/Fusekite/blob/9d3c9df8a75c287daad44afa2407338e4b5fd62e/pos_verify.mbt)与[独立 oracle](https://github.com/Lyhdsba/Fusekite/blob/9d3c9df8a75c287daad44afa2407338e4b5fd62e/pos_test.mbt)。POS 复用本项目的补函数 SOP 精确覆盖，不是 MoonBDD 代码复用；器件估算仍仅支持 SOP。本轮只读复核确认 MoonBDD 公开主分支仍为上述固定版本；其公开 API 未提供该精确 POS 选择流程。这不构成对整个 Mooncakes 生态不存在同类项目的断言。
 
 ## 共同基础与不同交付目标
 

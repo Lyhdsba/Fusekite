@@ -72,7 +72,7 @@ test "POS don't-cares expand zero cubes without requiring coverage" {
 ///|
 test "POS constants and unconstrained tables across every supported width" {
   for width in 1..<9 {
-    let rows : Array[Int] = []
+    let rows : Array[Int32] = []
     for row in 0..<(1 << width) {
       rows.push(row)
     }
@@ -105,7 +105,7 @@ test "POS constants and unconstrained tables across every supported width" {
 
 ///|
 test "POS eight-input endpoints and MSB preserve row order" {
-  let on_set : Array[Int] = []
+  let on_set : Array[Int32] = []
   for row in 1..<255 {
     on_set.push(row)
   }
@@ -117,7 +117,7 @@ test "POS eight-input endpoints and MSB preserve row order" {
   for row in 0..<256 {
     assert_eq(solution.evaluate(row), Some(row != 0 && row != 255))
   }
-  let upper_on : Array[Int] = []
+  let upper_on : Array[Int32] = []
   for row in 0..<254 {
     upper_on.push(row)
   }
@@ -130,7 +130,7 @@ test "POS eight-input endpoints and MSB preserve row order" {
   }
   assert_eq(upper.evaluate(256), None)
   assert_eq(upper.clauses()[0].evaluate(256), None)
-  let msb_on : Array[Int] = []
+  let msb_on : Array[Int32] = []
   for row in 128..<256 {
     msb_on.push(row)
   }
@@ -170,7 +170,7 @@ test "POS tie-break and defensive copies are deterministic" {
 ///|
 // Read the exported patterns as OR clauses and AND their values, independently
 // of the implementation's cube masks and covers_row operation.
-fn evaluate_pos_patterns(patterns : Array[String], row : Int) -> Bool {
+fn evaluate_pos_patterns(patterns : Array[String], row : Int32) -> Bool {
   for pattern in patterns {
     let characters = pattern.to_array()
     let mut sum = false
@@ -193,10 +193,10 @@ fn evaluate_pos_patterns(patterns : Array[String], row : Int) -> Bool {
 // then use dynamic programming over subsets of required zero rows. This does
 // not call refine, minimize_sop, Cube::covers_row, or the POS evaluator.
 fn pos_cost_oracle(
-  width : Int,
-  on_set : Array[Int],
-  dc : Array[Int],
-) -> (Int, Int) {
+  width : Int32,
+  on_set : Array[Int32],
+  dc : Array[Int32],
+) -> (Int32, Int32) {
   let row_count = 1 << width
   let mut required_zero_mask = 0
   for row in 0..<row_count {
@@ -208,10 +208,10 @@ fn pos_cost_oracle(
   for _ in 0..<width {
     clause_choices *= 3
   }
-  let candidates : Array[(Int, Int)] = []
+  let candidates : Array[(Int32, Int32)] = []
   for code in 0..<clause_choices {
     let mut digits = code
-    let literals : Array[Int] = []
+    let literals : Array[Int32] = []
     let mut cost = 0
     for _ in 0..<width {
       let choice = digits % 3
@@ -272,7 +272,7 @@ fn pos_cost_oracle(
 test "POS all three-input functions match literal semantics and exact cost oracle" {
   let config = @sat.SolverConfig::new(100_000).unwrap()
   for truth_bits in 0..<256 {
-    let on_set : Array[Int] = []
+    let on_set : Array[Int32] = []
     for row in 0..<8 {
       if ((truth_bits >> row) & 1) == 1 {
         on_set.push(row)
@@ -303,9 +303,9 @@ test "POS all three-input functions match literal semantics and exact cost oracl
 
 ///|
 fn spec_for(
-  width : Int,
-  on_set : Array[Int],
-  dc : Array[Int],
+  width : Int32,
+  on_set : Array[Int32],
+  dc : Array[Int32],
 ) -> @fusekite.TruthSpec {
   @fusekite.TruthSpec::new(width, on_set, dc).unwrap()
 }
@@ -314,8 +314,8 @@ fn spec_for(
 test "POS all three-input ternary specs agree with independent cost and symbolic checks" {
   let config = @sat.SolverConfig::new(100_000).unwrap()
   for code in 0..<6561 {
-    let on_set : Array[Int] = []
-    let dc : Array[Int] = []
+    let on_set : Array[Int32] = []
+    let dc : Array[Int32] = []
     let mut digits = code
     for row in 0..<8 {
       if digits % 3 == 1 {
@@ -350,8 +350,8 @@ test "POS all three-input ternary specs agree with independent cost and symbolic
 test "POS verifiers agree with every two-input completion and replay counterexamples" {
   let config = @sat.SolverConfig::new(100_000).unwrap()
   for code in 0..<81 {
-    let on_set : Array[Int] = []
-    let dc : Array[Int] = []
+    let on_set : Array[Int32] = []
+    let dc : Array[Int32] = []
     let mut digits = code
     for row in 0..<4 {
       if digits % 3 == 1 {
@@ -363,7 +363,7 @@ test "POS verifiers agree with every two-input completion and replay counterexam
     }
     let spec = spec_for(2, on_set, dc)
     for truth_bits in 0..<16 {
-      let candidate_on : Array[Int] = []
+      let candidate_on : Array[Int32] = []
       for row in 0..<4 {
         if ((truth_bits >> row) & 1) == 1 {
           candidate_on.push(row)
@@ -443,7 +443,7 @@ test "POS SAT verification preserves budget exhaustion" {
 test "POS symbolic verification handles constants at widths one through eight" {
   let config = @sat.SolverConfig::new(100_000).unwrap()
   for width in 1..<9 {
-    let rows : Array[Int] = []
+    let rows : Array[Int32] = []
     for row in 0..<(1 << width) {
       rows.push(row)
     }
@@ -465,7 +465,7 @@ test "POS symbolic verification handles constants at widths one through eight" {
 
 ///|
 test "POS eight-input symbolic checks preserve MSB first counterexamples" {
-  let dc : Array[Int] = []
+  let dc : Array[Int32] = []
   for row in 0..<256 {
     if row != 128 && row != 129 {
       dc.push(row)
@@ -480,7 +480,7 @@ test "POS eight-input symbolic checks preserve MSB first counterexamples" {
     @fusekite.verify_pos_with_sat(spec, solution, config)
     is @fusekite.SatEquivalence::Equivalent,
   )
-  let rows : Array[Int] = []
+  let rows : Array[Int32] = []
   for row in 0..<256 {
     rows.push(row)
   }
@@ -511,8 +511,8 @@ test "POS eight-input symbolic checks preserve MSB first counterexamples" {
 ///|
 test "POS all two-input ternary specifications match cared rows and exact costs" {
   for code in 0..<81 {
-    let on_set : Array[Int] = []
-    let dc : Array[Int] = []
+    let on_set : Array[Int32] = []
+    let dc : Array[Int32] = []
     let mut digits = code
     for row in 0..<4 {
       if digits % 3 == 1 {

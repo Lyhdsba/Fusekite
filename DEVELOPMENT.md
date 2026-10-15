@@ -181,3 +181,44 @@ electrical qualification, or approval under a particular competition's AI-use
 rules. Hardware use still requires verification against the exact selected
 device variants and their datasheets; software estimates do not establish
 electrical behavior.
+
+## October initial-review audit (2026-10-15)
+
+The public preparation documents now distinguish the September `3371536`
+baseline from October's POS implementation (`4cf0228`), direct symbolic/oracle
+verification (`615c352`), and runnable scenarios (`9d3c9df`). The old path note
+incorrectly still called POS planned; it now describes the implemented scope.
+The concise AI-assisted material links to the detailed supporting proposal;
+neither is described as a completed human-authored submission. The official
+October site and charter were read again; the charter still displays September
+schedule headings and requires a human-written, one-page Markdown proposal.
+Cross-period attempt counting, old-project support, and quarterly eligibility
+remain questions for the organizer. The source-backed MoonBDD comparison now
+separates the fixed September table from October's POS increment; upstream was
+read only, with no code or layout copied.
+
+The latest completed remote run at preparation time, [`9d3c9df`](https://github.com/Lyhdsba/Fusekite/actions/runs/38624216996),
+failed formatting with Moon `0.1.20261012`. This audit reproduced the failure
+using the official Windows SDK, whose binary archive SHA-256 matched the
+vendor's published checksum. The SDK was installed separately from the older
+local SDK. Its formatter rewrote the `Int` alias as `Int32` and wrapped three
+long declarations; the resulting source changes add no algorithm or feature.
+README and the numeric design contract now identify the verified toolchain
+and integer spelling. CI continues to install stable and report its version;
+future stable updates can require another compatibility check.
+
+With Moon `0.1.20261012` / moonc `v0.10.15+943464bfa`, the following passed:
+`moon fmt --check`, `moon check --deny-warn`, all 66 tests, `moon build`,
+`moon run cmd/main`, `moon doc`, `moon package --list`, and `git diff --check`.
+The executable checked 4, 10, and 8 cared rows and both BDD/SAT paths for each
+SOP/POS scenario. Python 3.12 and the pinned Z3 `5.1.0.0` differential check
+passed all 3,586 QF_BV cases again for this SDK adaptation.
+Local success is distinct from the subsequent remote run for this change.
+
+Automated inspection of the tracked public files found no local absolute
+paths, private contact details, credentials, or internal task instructions.
+This is a bounded current-file scan, not a certification of every historical
+commit or external attachment. The AI coding assistant substantially assisted
+this audit, SDK adaptation, automated verification, and documentation. No
+human review, personal reproduction, user feedback, hardware test, organizer
+approval, or final acceptance is claimed.
