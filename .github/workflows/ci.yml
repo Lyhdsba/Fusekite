@@ -52,6 +52,12 @@ jobs:
       - name: Run the worked examples
         run: moon run cmd/main
 
+      - name: Check and run the downstream consumer
+        run: |
+          moon -C examples/status-indicator fmt --check
+          moon -C examples/status-indicator check --deny-warn
+          moon -C examples/status-indicator run .
+
       - name: Differentially check QF_BV cases with Z3
         run: python tests/qfbv_z3_oracle.py
 

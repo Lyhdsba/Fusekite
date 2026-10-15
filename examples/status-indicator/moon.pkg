@@ -1,0 +1,7 @@
+import {
+  "Lyhdsba/fusekite",
+  "Lyhdsba/fusekite/parts",
+  "Lyhdsba/fusekite/sat",
+}
+
+pkgtype(kind: "executable")

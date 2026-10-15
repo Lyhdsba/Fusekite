@@ -6,6 +6,36 @@ Fusekite is a MoonBit Boolean-reasoning and electronics-planning library. It com
 
 中文使用说明见[使用指南](docs/使用指南.md)，涵盖输入规格、SOP/POS 解读、三个可运行场景与器件估算边界。
 
+## Start with your own logic table
+
+The main workflow is for a MoonBit developer or digital-logic learner who
+has one small Boolean output to simplify and check before estimating a
+direct gate implementation:
+
+1. Fix the input order (first input is the most significant row bit), then
+   pass 1–8 inputs, required 1 rows, and don't-care rows to `TruthSpec::new`.
+   All other rows require 0; invalid specs return `None`.
+2. Call `minimize_sop` and/or `minimize_pos`; read deterministic patterns and
+   term/clause and literal counts. Check against your application rule and
+   use the BDD/SAT verifiers. SAT `Unknown` is inconclusive.
+3. For SOP only, call `estimate_sop_gate_cost`, then
+   `@parts.estimate_74hc_packages`. These are direct structural estimates,
+   without timing, pin wiring, or electrical qualification.
+
+For a complete downstream integration, run this from the checkout root:
+
+```sh
+moon -C examples/status-indicator run .
+```
+
+The [status-indicator consumer](examples/status-indicator/README.md) is a
+separate MoonBit module with its own input rule and a declared Fusekite
+dependency. It checks all 16 rows, both symbolic verification paths, a
+replayed counterexample to an incomplete candidate, and SOP gate/package
+counts. Its workspace uses this checkout's source; it does not require or
+demonstrate a published Mooncakes release. To tour the built-in circuits
+and solver APIs instead, run `moon run cmd/main`.
+
 ## Capabilities and limits
 
 Fusekite provides a reduced ordered binary decision diagram (ROBDD) manager with a fixed variable order, unique-node reduction, memoized AND/OR/XOR application, complement, evaluation, and canonical equivalence checks. Its `sat/` package validates and normalizes CNF, parses DIMACS files, encodes Boolean expression trees with shared Tseitin subexpressions, and solves with deterministic DPLL propagation under an explicit search budget. The `smt/` package adds a bounded QF_BV bit-blasting front end: unsigned bit-vectors up to 8 bits, bitwise operations, wrapping add/subtract, low-product multiplication, equality, and signed/unsigned comparison. A SAT-backed verifier can return a concrete counterexample when an SOP cover is wrong. Alongside these foundations, Fusekite validates a single-output truth table, performs deterministic Quine–McCluskey refinement and exact minimum SOP selection, estimates direct SOP gate counts, and maps those estimates to a sourced 74HC catalog.
@@ -195,6 +225,9 @@ moon check --deny-warn
 moon test
 moon build
 moon run cmd/main
+moon -C examples/status-indicator fmt --check
+moon -C examples/status-indicator check --deny-warn
+moon -C examples/status-indicator run .
 moon doc
 moon package --list
 ```
@@ -210,9 +243,9 @@ python tests/qfbv_z3_oracle.py
 This tooling is not a runtime dependency of the MoonBit library.
 
 The GitHub Actions workflow pins an Ubuntu LTS image and a Node 24-compatible
-checkout action, then runs formatting, check, tests, build, examples, package
-validation, and the separate Z3 differential corpus on pushes to `main` and
-pull requests.
+checkout action, then runs formatting, check, tests, build, built-in and
+downstream examples, package validation, and the separate Z3 differential
+corpus on pushes to `main` and pull requests.
 
 See [DEVELOPMENT.md](DEVELOPMENT.md) for the AI contribution statement,
 reproducible checks, and validation limits.

@@ -253,3 +253,33 @@ do not establish a subsequent remote CI result. The AI coding assistant
 substantially contributed to the executable checks, scenario documentation,
 and automated validation; no human reproduction, user feedback, or hardware
 testing is claimed.
+
+## Downstream consumer and entry workflow (2026-10-15)
+
+The maintainer explicitly set the priority of clarifying the main usage
+workflow and adding an independently runnable consumer where absent. Source
+inspection found that the existing circuit and solver demonstrations all
+belonged to the library module. The AI coding assistant analyzed that gap,
+implemented the consumer and documentation, and ran the automated checks.
+
+README now introduces the truth-table-to-verification-to-SOP-estimate path
+before the API inventory. `examples/status-indicator` is a separate MoonBit
+module declaring a Fusekite dependency; `examples/moon.work` resolves it from
+the checkout rather than assuming a Mooncakes publication. The consumer's
+own four-input build/review indicator rule differs from the built-in circuits.
+It checks all 16 rows against the application predicate, independently
+interprets SOP patterns, checks POS evaluation, and requires BDD/SAT
+equivalence for both forms. An incomplete candidate must be rejected and its
+SAT witness at row 10 is replayed. Direct SOP gates and package counts are
+asserted. CI now checks and runs the separate consumer.
+
+With Moon `0.1.20261012` / moonc `v0.10.15+943464bfa`, local formatting,
+warning-free checking, all 66 library tests, build, the built-in examples,
+API documentation, package listing, and `git diff --check` passed. The
+consumer's formatting, warning-free check, and executable assertions also
+passed. A copy of the consumer also checked and ran in a workspace outside
+the repository. Omitting row 10 from that copy's input reached and failed
+the result assertion; restoring the source passed again on the default Wasm
+target. The SAT/QF_BV implementation and corpus were unchanged; the separate
+Z3 differential corpus was not rerun. These results do not claim manual
+review, user feedback, physical testing, or a subsequent remote CI result.
