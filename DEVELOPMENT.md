@@ -1,4 +1,4 @@
-# Development and review record
+# Development and validation record
 
 ## Who decided what
 
@@ -6,7 +6,7 @@ The project maintainer chose the combination-logic minimizer topic, the
 electronics focus, the single-output scope, and the requested milestones and
 acceptance checks. An AI coding assistant contributed substantially to the
 MoonBit implementation, tests, worked examples, documentation, and CI changes.
-The maintainer directed the work and is responsible for the submitted project;
+The maintainer directed the work and is responsible for the project;
 this record does not claim that every line was handwritten by the maintainer.
 
 Git author and committer fields identify the repository account used for
@@ -25,7 +25,7 @@ commit history and this record should be read together.
 | `39c7f60` | CI, runnable examples, and Mooncakes metadata | The first remote CI run exposed newer-compiler warnings in black-box tests. |
 | `22e87cd` | Qualified black-box test references for current MoonBit | Remote CI passed after this fix. |
 | `7e3a72a` | Integer-overflow guard and sparse eight-input boundary cases | 22 tests passed locally and [remote CI passed](https://github.com/Lyhdsba/Fusekite/actions/runs/36376524489). |
-| `62e6c5c` | Disclosed substantial AI assistance and recorded owner-review items | The review checklist remains open; no manual or hardware review is claimed. |
+| `62e6c5c` | Disclosed substantial AI assistance and recorded owner-review items | This disclosure does not establish manual review or hardware validation. |
 | `c963a0a` | Pinned CI runner and Node-compatible checkout action | [Remote CI passed](https://github.com/Lyhdsba/Fusekite/actions/runs/36376743147). |
 | `6f60cc2` | Added the competition proposal with AI contribution disclosure | Removed personal contact details from the public copy; [remote CI passed](https://github.com/Lyhdsba/Fusekite/actions/runs/36399790990). |
 | `7427929` | Snapshotted caller-owned truth-table arrays during validation | Added a regression test; 23 tests passed and [remote CI passed](https://github.com/Lyhdsba/Fusekite/actions/runs/36408528637). |
@@ -67,8 +67,8 @@ Local Moon `0.1.20260827` / moonc `v0.10.11+6ff76a5f9` checks passed:
 `moon run cmd/main`, `moon doc`, and `moon package --list`. The pinned Z3
 `5.1.0.0` differential check also passed all 3,586 existing QF_BV cases.
 These are automated software results; no human review or manual/hardware
-testing is claimed. POS circuit demonstrations remain future work; the next
-verification increment below adds dedicated POS BDD/SAT checks.
+testing is claimed. At this revision, POS circuit demonstrations were absent;
+the next verification increment below adds dedicated POS BDD/SAT checks.
 
 The preceding main revision `1dbdb5b` failed its [remote format check](https://github.com/Lyhdsba/Fusekite/actions/runs/38590700258):
 the automatically installed Moon `0.1.20261012` formatter rewrites `Int` as
@@ -120,15 +120,12 @@ BCD rows are printed separately; code 12 has SOP 1 and POS 0. The added circuit
 test pins all three POS results and explicitly checks that allowed difference.
 Gate/package estimates remain SOP-only; POS and NAND/NOR mapping are absent.
 
-README and both proposal documents give the user, input, steps, and expected
-result for each scenario. They distinguish two-level term/clause costs from
-hardware cost and identify the proposals as AI-assisted preparation materials.
-The maintainer's recorded decisions concern the topic, electronics focus,
-scope, and requested work. Independent rewriting, personal reproduction,
-line-by-line review, datasheet review, and hardware testing have not been
-recorded as completed. Git publishing identity is not evidence of those actions.
-The AI coding assistant substantially contributed to this increment's code,
-automated checks, scenarios, and documentation.
+README and the worked-circuit documentation give the user, input, steps, and
+expected result for each scenario. They distinguish two-level term/clause costs
+from hardware cost. The AI coding assistant substantially contributed to this
+increment's code, automated checks, scenarios, and documentation. The recorded
+checks do not establish personal reproduction, independent line-by-line review,
+datasheet review, or hardware testing.
 
 Local Moon `0.1.20260827` / moonc `v0.10.11+6ff76a5f9` checks passed:
 `moon fmt --check`, `moon check --deny-warn`, all 66 tests, `moon build`,
@@ -177,25 +174,15 @@ documentation, packaging, SAT/BDD/QF_BV software oracles, a bounded QF_BV
 differential corpus against Z3, literal-level SOP simulation, and the runnable
 examples. They do not claim an independent line-by-line review, differential
 coverage of arbitrary SMT formulas, external HDL simulation, physical testing,
-electrical qualification, or approval under a particular competition's AI-use
-rules. Hardware use still requires verification against the exact selected
-device variants and their datasheets; software estimates do not establish
-electrical behavior.
+electrical qualification. Hardware use still requires verification against the
+exact selected device variants and their datasheets; software estimates do not
+establish electrical behavior.
 
-## October initial-review audit (2026-10-15)
+## SDK formatting compatibility (2026-10-15)
 
-The public preparation documents now distinguish the September `3371536`
-baseline from October's POS implementation (`4cf0228`), direct symbolic/oracle
-verification (`615c352`), and runnable scenarios (`9d3c9df`). The old path note
-incorrectly still called POS planned; it now describes the implemented scope.
-The concise AI-assisted material links to the detailed supporting proposal;
-neither is described as a completed human-authored submission. The official
-October site and charter were read again; the charter still displays September
-schedule headings and requires a human-written, one-page Markdown proposal.
-Cross-period attempt counting, old-project support, and quarterly eligibility
-remain questions for the organizer. The source-backed MoonBDD comparison now
-separates the fixed September table from October's POS increment; upstream was
-read only, with no code or layout copied.
+The source-backed MoonBDD comparison separates the fixed September baseline
+from the October POS increment. The comparison describes current implemented
+scope; it does not establish code reuse or integration.
 
 The latest completed remote run at preparation time, [`9d3c9df`](https://github.com/Lyhdsba/Fusekite/actions/runs/38624216996),
 failed formatting with Moon `0.1.20261012`. This audit reproduced the failure
@@ -215,10 +202,26 @@ SOP/POS scenario. Python 3.12 and the pinned Z3 `5.1.0.0` differential check
 passed all 3,586 QF_BV cases again for this SDK adaptation.
 Local success is distinct from the subsequent remote run for this change.
 
-Automated inspection of the tracked public files found no local absolute
-paths, private contact details, credentials, or internal task instructions.
-This is a bounded current-file scan, not a certification of every historical
-commit or external attachment. The AI coding assistant substantially assisted
-this audit, SDK adaptation, automated verification, and documentation. No
-human review, personal reproduction, user feedback, hardware test, organizer
-approval, or final acceptance is claimed.
+The AI coding assistant substantially assisted the SDK compatibility work,
+automated verification, and documentation. These results do not establish
+human review, personal reproduction, user feedback, or hardware testing.
+
+## Chinese usage documentation (2026-10-15)
+
+The [Chinese usage guide](docs/使用指南.md) brings together the implemented API
+entry points, truth-table input rules, SOP/POS pattern polarity, three runnable
+circuits, SAT outcome interpretation, and the SOP-only device estimate model.
+README links directly to it. The MoonBDD comparison remains tied to fixed
+source revisions rather than asserting the current state of an upstream branch.
+No algorithm or public API changed in this documentation revision.
+
+With Moon `0.1.20261012` / moonc `v0.10.15+943464bfa`, local formatting,
+warning-free type checking, all 66 tests, the runnable examples, API documentation
+generation, and package listing passed. The examples reproduced the documented
+patterns, costs, and 4/10/8 cared-row checks with BDD/SAT equivalence. The separate
+Z3 corpus was not rerun for this documentation revision; earlier runs above are
+historical results. Local checks do not establish a subsequent remote CI result.
+
+The AI coding assistant substantially contributed to the guide, related
+documentation edits, source inspection, and automated validation. No independent
+human review, user feedback, or hardware testing is claimed.

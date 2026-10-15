@@ -4,6 +4,8 @@
 
 Fusekite is a MoonBit Boolean-reasoning and electronics-planning library. It combines a canonical ROBDD, a bounded DPLL SAT backend with Tseitin CNF encoding, exact small-table SOP and POS minimizers, and transparent 74HC gate estimates. The symbolic layers can be used independently; the electronics planner is a tested application built on those foundations.
 
+中文使用说明见[使用指南](docs/使用指南.md)，涵盖输入规格、SOP/POS 解读、三个可运行场景与器件估算边界。
+
 ## Current stage
 
 Fusekite provides a reduced ordered binary decision diagram (ROBDD) manager with a fixed variable order, unique-node reduction, memoized AND/OR/XOR application, complement, evaluation, and canonical equivalence checks. Its `sat/` package validates and normalizes CNF, parses DIMACS files, encodes Boolean expression trees with shared Tseitin subexpressions, and solves with deterministic DPLL propagation under an explicit search budget. The `smt/` package adds a bounded QF_BV bit-blasting front end: unsigned bit-vectors up to 8 bits, bitwise operations, wrapping add/subtract, low-product multiplication, equality, and signed/unsigned comparison. A SAT-backed verifier can return a concrete counterexample when an SOP cover is wrong. Alongside these foundations, Fusekite validates a single-output truth table, performs deterministic Quine–McCluskey refinement and exact minimum SOP selection, estimates direct SOP gate counts, and maps those estimates to a sourced 74HC catalog.
@@ -33,24 +35,7 @@ SOP → Boolean verification → gate/74HC package estimate workflow. This exten
 the range of tools available in the MoonBit ecosystem; it does not add those
 features to MoonBDD or connect the two projects in the current implementation.
 
-### Future reuse evaluation (not implemented)
-
-1. Pin a MoonBDD revision and review its public API, license/attribution duties,
-   variable order, manager/handle ownership, and resource/error contracts.
-2. Prototype an optional MoonBDD-backed SOP verification adapter or a bounded
-   truth-table interchange for at most eight inputs. Specify variable/row order
-   and don't-care semantics explicitly; never exchange raw BDD node identifiers
-   between managers. Keep Fusekite's SAT/QF_BV and electronics layers independent.
-3. Compare the prototype with exhaustive small truth tables and the existing
-   Fusekite BDD/SAT paths, including counterexamples and exhausted budgets;
-   measure time, memory, and dependency/maintenance costs before deciding on reuse.
-4. Publish the pinned version, adapter code, reproducible results, attribution,
-   and a reasoned adopt/defer decision. Only a completed, validated implementation
-   would be described as integration. No prototype, reuse evaluation results, or
-   integration are delivered by this documentation change.
-
-The [proposal's relationship and reuse plan](docs/项目申报书.md#92-当前技术关系与项目层面的互补扩展)
-states the same distinction between current capabilities and future work.
+There is currently no interchange format or verification adapter between the two projects. Any future interoperability would need explicit variable-order, don't-care, ownership, and resource contracts plus independent validation.
 
 ## Example
 
@@ -194,7 +179,7 @@ The root MoonBit package contains the reusable ROBDD manager in `bdd.mbt`, SAT-b
 ## Build and test
 
 Use Moon `0.1.20261012` / moonc `v0.10.15+943464bfa`, the toolchain verified
-for the October initial-review materials. The current formatter spells the
+for the current source format. The current formatter spells the
 32-bit integer type `Int32`; older SDK formatting results can differ. CI
 installs the current stable SDK and prints its version, so check that version
 when reproducing a failure. The verified version is not a compatibility claim

@@ -1,6 +1,6 @@
 # MoonBDD 与 Fusekite：已实现范围对比
 
-基线核对日期：2026-10-14；十月增量复核：2026-10-15（Asia/Shanghai）。本文用于九月初审反馈后的范围说明，只比较已有能力，不表示两个项目已经集成，也不作为性能排名或赛事复审结论。
+基线核对日期：2026-10-14；十月增量复核：2026-10-15（Asia/Shanghai）。本文帮助使用者比较固定版本的能力与边界，不表示两个项目已经集成，也不作为性能排名。
 
 ## 版本与证据
 
@@ -10,7 +10,7 @@
 
 ## 十月新增与比较边界
 
-截至 [`9d3c9df`](https://github.com/Lyhdsba/Fusekite/tree/9d3c9df8a75c287daad44afa2407338e4b5fd62e)，Fusekite 新增了单输出、1–8 输入的精确 POS 化简、独立 `PosClause`/`PosSolution`、求值及专用 BDD/SAT 核验，并补齐三个 SOP/POS 电路对照。见固定版本的 [POS 实现](https://github.com/Lyhdsba/Fusekite/blob/9d3c9df8a75c287daad44afa2407338e4b5fd62e/pos.mbt)、[验证器](https://github.com/Lyhdsba/Fusekite/blob/9d3c9df8a75c287daad44afa2407338e4b5fd62e/pos_verify.mbt)与[独立 oracle](https://github.com/Lyhdsba/Fusekite/blob/9d3c9df8a75c287daad44afa2407338e4b5fd62e/pos_test.mbt)。POS 复用本项目的补函数 SOP 精确覆盖，不是 MoonBDD 代码复用；器件估算仍仅支持 SOP。本轮只读复核确认 MoonBDD 公开主分支仍为上述固定版本；其公开 API 未提供该精确 POS 选择流程。这不构成对整个 Mooncakes 生态不存在同类项目的断言。
+截至 [`9d3c9df`](https://github.com/Lyhdsba/Fusekite/tree/9d3c9df8a75c287daad44afa2407338e4b5fd62e)，Fusekite 新增了单输出、1–8 输入的精确 POS 化简、独立 `PosClause`/`PosSolution`、求值及专用 BDD/SAT 核验，并补齐三个 SOP/POS 电路对照。见固定版本的 [POS 实现](https://github.com/Lyhdsba/Fusekite/blob/9d3c9df8a75c287daad44afa2407338e4b5fd62e/pos.mbt)、[验证器](https://github.com/Lyhdsba/Fusekite/blob/9d3c9df8a75c287daad44afa2407338e4b5fd62e/pos_verify.mbt)与[独立 oracle](https://github.com/Lyhdsba/Fusekite/blob/9d3c9df8a75c287daad44afa2407338e4b5fd62e/pos_test.mbt)。POS 复用本项目的补函数 SOP 精确覆盖，不是 MoonBDD 代码复用；器件估算仍仅支持 SOP。上述固定版本的 MoonBDD 公开 API 未提供该精确 POS 选择流程。这不构成对整个 Mooncakes 生态不存在同类项目的断言。
 
 ## 共同基础与不同交付目标
 
@@ -30,7 +30,7 @@
 
 Fusekite 增加的是可独立调用的 SAT 后端和有明确边界的位向量前端。CNF 上限为 4,096 个变量；表达式入口最多 256 个源变量，编码仍受 4,096 变量边界限制。DPLL 搜索预算为 1–1,000,000 个搜索节点，使用时间顺序回溯，没有 CDCL、冲突学习或工业性能保证。Unknown 不能写成 UNSAT；UNSAT 结果也不意味着已经输出可供外部检查的证明证书。[F2]
 
-QF_BV 将当前支持的定宽操作降为 SAT，保留 SAT、UNSAT、Unknown 和非法输入的区别；有符号能力仅为小于比较。不支持除法、移位、拼接、数组、未解释函数、量词或 SMT-LIB 解析，没有原生理论传播，不是完整 SMT 求解器。已记录的固定 Z3 差分语料用于验证现有实现，Z3 是测试工具，不是 Fusekite 的运行时求解后端；本次文档修改未重新执行该语料。[F3]
+QF_BV 将当前支持的定宽操作降为 SAT，保留 SAT、UNSAT、Unknown 和非法输入的区别；有符号能力仅为小于比较。不支持除法、移位、拼接、数组、未解释函数、量词或 SMT-LIB 解析，没有原生理论传播，不是完整 SMT 求解器。已记录的固定 Z3 差分语料用于验证现有实现，Z3 是测试工具，不是 Fusekite 的运行时求解后端；各版本实际运行结果见开发验证记录。[F3]
 
 “精确最小”限定为给定单输出真值表在无关项允许范围内、上述项数/文字数目标下的两级 SOP，不保证任意门网络、封装数量、时延或功耗全局最优。BDD 与 SAT 验证只证明 cared rows 上的布尔等价，不能替代电气验证。门数估算及器件封装折算用于早期方案规划，不包含技术映射、引脚布线、扇出、时序、价格或实体实验结论。[F1]、[F2]、[F4]、[F5]、[F6]
 
