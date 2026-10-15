@@ -6,7 +6,7 @@ Fusekite is a MoonBit Boolean-reasoning and electronics-planning library. It com
 
 中文使用说明见[使用指南](docs/使用指南.md)，涵盖输入规格、SOP/POS 解读、三个可运行场景与器件估算边界。
 
-## Current stage
+## Capabilities and limits
 
 Fusekite provides a reduced ordered binary decision diagram (ROBDD) manager with a fixed variable order, unique-node reduction, memoized AND/OR/XOR application, complement, evaluation, and canonical equivalence checks. Its `sat/` package validates and normalizes CNF, parses DIMACS files, encodes Boolean expression trees with shared Tseitin subexpressions, and solves with deterministic DPLL propagation under an explicit search budget. The `smt/` package adds a bounded QF_BV bit-blasting front end: unsigned bit-vectors up to 8 bits, bitwise operations, wrapping add/subtract, low-product multiplication, equality, and signed/unsigned comparison. A SAT-backed verifier can return a concrete counterexample when an SOP cover is wrong. Alongside these foundations, Fusekite validates a single-output truth table, performs deterministic Quine–McCluskey refinement and exact minimum SOP selection, estimates direct SOP gate counts, and maps those estimates to a sourced 74HC catalog.
 
@@ -14,28 +14,23 @@ The truth-table minimizer is intentionally bounded to one output and at most eig
 
 ## Relationship to MoonBDD
 
-Both projects implement ROBDDs and Boolean reasoning. MoonBDD also provides
-parsing, quantification, model counting, reordering, and bounded finite-state
-reachability. Fusekite's distinct implemented scope combines an independent
-CNF/Tseitin/DPLL backend, bounded QF_BV bit-blasting, exact small-table SOP
-minimization with BDD/SAT verification, and direct SOP gate/package estimates.
-See the [source-backed scope comparison](docs/MoonBDD与Fusekite范围对比.md)
-for pinned upstream and local sources, limits, and overlap.
+Both projects implement ROBDDs, Boolean operations, and equivalence checks;
+these shared capabilities are not unique to Fusekite. In the pinned version
+documented in the [source-backed scope comparison](docs/MoonBDD与Fusekite范围对比.md),
+MoonBDD also provides parsing, quantification, model counting, reordering, and
+bounded finite-state reachability.
 
-Fusekite currently uses its own ROBDD implementation in `bdd.mbt` and its own
-SAT/QF_BV packages. Its module metadata and package imports contain no MoonBDD
-dependency; there is no MoonBDD API call, adapter, or shared BDD handle interface.
-Fusekite is an independent project, not a MoonBDD fork or plugin, and does not
-claim code reuse, joint development, or endorsement by MoonBDD's author.
+Fusekite complements that scope with a separate CNF/Tseitin/DPLL backend,
+bounded QF_BV bit-blasting, and exact small-table SOP/POS minimization with
+BDD/SAT verification. Its electronics workflow maps SOP results to direct
+gate counts and 74HC package estimates; POS has no gate/package estimator.
+These are capabilities of Fusekite as a separate MoonBit library.
 
-The **complementary extension is at the project-capability level**: alongside
-MoonBDD's BDD analysis and finite-state exploration, Fusekite offers an
-independent CNF/SAT and bounded bit-vector path, plus a small truth-table → exact
-SOP → Boolean verification → gate/74HC package estimate workflow. This extends
-the range of tools available in the MoonBit ecosystem; it does not add those
-features to MoonBDD or connect the two projects in the current implementation.
-
-There is currently no interchange format or verification adapter between the two projects. Any future interoperability would need explicit variable-order, don't-care, ownership, and resource contracts plus independent validation.
+Fusekite uses the ROBDD manager in `bdd.mbt` and its own `sat/` and `smt/`
+packages. Its module metadata and package imports contain no MoonBDD
+dependency, and it has no MoonBDD adapter, interchange format, or shared BDD
+handle interface. Users call each library separately; Fusekite does not extend
+MoonBDD's API. BDD node IDs are local to their owning manager.
 
 ## Example
 
@@ -47,7 +42,7 @@ let solution = minimize_sop(spec.unwrap())
 println(solution.patterns()) // ["--1"]
 ```
 
-For `F(A, B) = A OR NOT B`, the new POS API returns one sum clause:
+For `F(A, B) = A OR NOT B`, the POS API returns one sum clause:
 
 ```moonbit
 let spec = TruthSpec::new(2, [0, 2, 3], []).unwrap()
@@ -225,8 +220,8 @@ review and increment the semantic version as appropriate, then run:
 moon publish
 ```
 
-Publishing is a separate release action; this repository change prepares the
-metadata and package contents but does not publish a package.
+Package metadata describes the source module; it does not establish that the
+version is available on Mooncakes. `moon publish` is an explicit release action.
 
 ## License
 

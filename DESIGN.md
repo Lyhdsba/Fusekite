@@ -39,7 +39,10 @@
 
 A cube stores a value mask and a wildcard mask. Two cubes merge only when their wildcard masks match and exactly one specified bit differs. Each merge round keeps one copy of each resulting shape. A cube is reported as prime after a round in which it cannot merge further; don't-care-only cubes are excluded from the reported prime list.
 
-The first stage stops at prime implicants. It does not yet choose a cover, claim a globally minimal gate network, or model propagation delay and loading.
+`refine` returns prime implicants for the cover selector described below.
+Refinement alone does not select a cover. Exact cover selection minimizes the
+two-level term/literal objective, not an arbitrary gate network, propagation
+delay, or loading.
 
 ## Cover selection
 
@@ -105,12 +108,12 @@ widths 1–8, eight-input witnesses, width rejection, and budget exhaustion.
 These finite automated checks do not establish correctness for arbitrary
 unbounded formulas or hardware behavior. POS gate estimates are not implemented.
 
-## Decision points for later increments
+## Application scope
 
-- Add SOP/POS circuit demonstrations.
-- Add conflict learning, non-chronological backtracking, and branching heuristics only with separate benchmarks and differential tests against a pinned reference solver such as Z3.
-- Explore NAND/NOR technology mapping only with a separately documented cost and verification model.
-- Add pin-level wiring guidance only after selecting exact orderable device variants and reviewing their current datasheets.
+- The [worked examples](circuits/WORKED.md) compare SOP and POS for three combinational circuits with explicit truth tables and BDD/SAT checks.
+- SAT search uses deterministic chronological DPLL; conflict learning, non-chronological backtracking, and activity-based branching heuristics are not implemented.
+- Gate/package estimation accepts SOP results and uses the direct AND/OR/NOT model below. POS estimates and NAND/NOR technology mapping are not implemented.
+- The catalog supplies channel counts for package estimates. Pin-level wiring guidance and physical device qualification are outside the implemented scope.
 
 ## Two-level gate-count estimate
 
