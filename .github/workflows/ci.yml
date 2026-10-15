@@ -21,7 +21,13 @@ jobs:
       - name: Install MoonBit
         shell: bash
         run: |
-          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
+          version="$(tr -d '\r\n' < .moonbit-version)"
+          if ! [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+\+[0-9a-f]+$ ]]; then
+            echo "Expected a compiler release with commit hash in .moonbit-version" >&2
+            exit 1
+          fi
+          curl -fsSL https://cli.moonbitlang.com/install/unix.sh -o "$RUNNER_TEMP/install-moonbit.sh"
+          bash "$RUNNER_TEMP/install-moonbit.sh" "$version"
           echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
 
       - name: Install Python for the independent QF_BV oracle
@@ -34,8 +40,12 @@ jobs:
       - name: Install pinned Z3 oracle
         run: python -m pip install -r tests/requirements.txt
 
-      - name: Show toolchain versions
-        run: moon version --all
+      - name: Verify toolchain version
+        shell: bash
+        run: |
+          moon version --all
+          version="$(tr -d '\r\n' < .moonbit-version)"
+          [[ "$(moonc -v)" == "v$version "* ]]
 
       - name: Check formatting
         run: moon fmt --check

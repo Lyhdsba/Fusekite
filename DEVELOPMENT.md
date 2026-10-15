@@ -138,7 +138,9 @@ success or resolve that toolchain drift.
 
 ## Reproduce the automated checks
 
-With the MoonBit toolchain and Python 3.12 installed, run from the repository checkout:
+Install the SDK selected by `.moonbit-version` using the
+[toolchain guide](docs/toolchain.md), plus Python 3.12, then run from the
+repository checkout:
 
 ```sh
 moon fmt --check
@@ -146,6 +148,9 @@ moon check --deny-warn
 moon test
 moon build
 moon run cmd/main
+moon -C examples/status-indicator fmt --check
+moon -C examples/status-indicator check --deny-warn
+moon -C examples/status-indicator run .
 moon doc
 moon package --list
 python -m pip install -r tests/requirements.txt
@@ -191,8 +196,8 @@ vendor's published checksum. The SDK was installed separately from the older
 local SDK. Its formatter rewrote the `Int` alias as `Int32` and wrapped three
 long declarations; the resulting source changes add no algorithm or feature.
 README and the numeric design contract now identify the verified toolchain
-and integer spelling. CI continues to install stable and report its version;
-future stable updates can require another compatibility check.
+and integer spelling. At that revision, CI still installed stable and reported
+its version; subsequent stable updates could require another compatibility check.
 
 With Moon `0.1.20261012` / moonc `v0.10.15+943464bfa`, the following passed:
 `moon fmt --check`, `moon check --deny-warn`, all 66 tests, `moon build`,
@@ -283,3 +288,34 @@ the result assertion; restoring the source passed again on the default Wasm
 target. The SAT/QF_BV implementation and corpus were unchanged; the separate
 Z3 differential corpus was not rerun. These results do not claim manual
 review, user feedback, physical testing, or a subsequent remote CI result.
+
+## Pinned toolchain and clean-install validation (2026-10-16)
+
+The maintainer explicitly requested reproducible CI using a verified SDK.
+The AI coding assistant inspected the existing results and official installers,
+updated CI and the installation guide, and ran automated validation. No human
+review, manual reproduction, user feedback, or hardware testing is claimed.
+
+CI previously invoked the official installer without a version, implicitly
+selecting `latest`. It now reads `.moonbit-version`, passes the exact compiler
+release `0.10.15+943464bfa` to the installer, and checks the installed compiler
+identity. This is the existing validated SDK (Moon `0.1.20261012`), not a newly
+chosen or inferred compatibility version. The official Linux and Windows
+binary archives and matching core archives were available under this selector.
+The Windows archive checksum published at that version also matched the
+previously validated archive. The [toolchain guide](docs/toolchain.md) records
+installation, clean validation, and the upgrade procedure; unavailable archives
+must fail rather than silently selecting another SDK.
+
+Fresh official installations and source copies passed formatting,
+warning-free checking, all 66 tests, build, built-in circuit/solver examples,
+the independent consumer's formatting/check/run assertions, API documentation,
+and package listing on Windows and Ubuntu 26.04 under WSL. Windows Python
+3.12.14 with pinned Z3 `5.1.0.0` passed all 3,586 differential cases. Workflow
+YAML parsing and Bash syntax checks passed. Executing the workflow guards
+rejected empty, `latest`, and Moon-date selectors before downloading, accepted
+the pinned compiler, and rejected the older installed compiler.
+
+These checks cover the default Wasm target. macOS and other targets were not
+tested. The local Linux checks used Ubuntu 26.04 WSL, distinct from CI's
+Ubuntu 24.04 runner; no new remote CI result is claimed by this local record.
