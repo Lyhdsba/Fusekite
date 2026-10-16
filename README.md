@@ -1,8 +1,14 @@
 # Fusekite
 
-**Boolean functions in. Canonical reasoning and a small-gate estimate out.**
+**Truth tables → verified SOP/POS → direct gate and 74HC package estimates.**
 
-Fusekite is a MoonBit Boolean-reasoning and electronics-planning library. It combines a canonical ROBDD, a bounded DPLL SAT backend with Tseitin CNF encoding, exact small-table SOP and POS minimizers, and transparent 74HC gate estimates. The symbolic layers can be used independently; the electronics planner is a tested application built on those foundations.
+Fusekite is a MoonBit library for simplifying and checking a single-output
+truth table with 1–8 inputs and optional don't-cares. It finds exact two-level
+sum-of-products (SOP) and product-of-sums (POS) forms, verifies them with binary
+decision diagrams (BDD) and Boolean satisfiability (SAT) checks, and estimates
+direct AND/OR/NOT gates and 74HC packages from either selected form. The estimates
+support early circuit planning; they do not establish timing or electrical
+behavior.
 
 中文使用说明见[使用指南](docs/使用指南.md)，涵盖输入规格、SOP/POS 解读、三个可运行场景与器件估算边界。
 
@@ -18,9 +24,10 @@ direct gate implementation:
 2. Call `minimize_sop` and/or `minimize_pos`; read deterministic patterns and
    term/clause and literal counts. Check against your application rule and
    use the BDD/SAT verifiers. SAT `Unknown` is inconclusive.
-3. For SOP only, call `estimate_sop_gate_cost`, then
-   `@parts.estimate_74hc_packages`. These are direct structural estimates,
-   without timing, pin wiring, or electrical qualification.
+3. Call `estimate_sop_gate_cost` or `estimate_pos_gate_cost`, then the matching
+   `@parts.estimate_74hc_packages` or `@parts.estimate_74hc_pos_packages`.
+   These are direct structural estimates, without timing, pin wiring, or
+   electrical qualification.
 
 For a complete downstream integration, run this from the checkout root:
 
@@ -35,32 +42,6 @@ replayed counterexample to an incomplete candidate, and SOP gate/package
 counts. Its workspace uses this checkout's source; it does not require or
 demonstrate a published Mooncakes release. To tour the built-in circuits
 and solver APIs instead, run `moon run cmd/main`.
-
-## Capabilities and limits
-
-Fusekite provides a reduced ordered binary decision diagram (ROBDD) manager with a fixed variable order, unique-node reduction, memoized AND/OR/XOR application, complement, evaluation, and canonical equivalence checks. Its `sat/` package validates and normalizes CNF, parses DIMACS files, encodes Boolean expression trees with shared Tseitin subexpressions, and solves with deterministic DPLL propagation under an explicit search budget. The `smt/` package adds a bounded QF_BV bit-blasting front end: unsigned bit-vectors up to 8 bits, bitwise operations, wrapping add/subtract, low-product multiplication, equality, and signed/unsigned comparison. A SAT-backed verifier can return a concrete counterexample when an SOP cover is wrong. Alongside these foundations, Fusekite validates a single-output truth table, performs deterministic Quine–McCluskey refinement and exact minimum SOP selection, estimates direct SOP gate counts, and maps those estimates to a sourced 74HC catalog.
-
-The truth-table minimizer is intentionally bounded to one output and at most eight inputs. The ROBDD manager accepts 1–32 variables, but BDD size can grow exponentially for some functions. The CNF solver accepts up to 4,096 variables, uses two-watched-literal propagation, and caps search at a caller-selected budget. The QF_BV layer bit-blasts into Boolean expressions and CNF; this is not a native theory solver or a complete SMT implementation. DPLL remains chronological and has no conflict learning or CDCL; hard formulas can return `Unknown` when the budget expires. Fusekite is an educational planning aid, not a substitute for datasheet checks, timing analysis, or electrical safety review.
-
-## Relationship to MoonBDD
-
-Both projects implement ROBDDs, Boolean operations, and equivalence checks;
-these shared capabilities are not unique to Fusekite. In the pinned version
-documented in the [source-backed scope comparison](docs/MoonBDD与Fusekite范围对比.md),
-MoonBDD also provides parsing, quantification, model counting, reordering, and
-bounded finite-state reachability.
-
-Fusekite complements that scope with a separate CNF/Tseitin/DPLL backend,
-bounded QF_BV bit-blasting, and exact small-table SOP/POS minimization with
-BDD/SAT verification. Its electronics workflow maps SOP results to direct
-gate counts and 74HC package estimates; POS has no gate/package estimator.
-These are capabilities of Fusekite as a separate MoonBit library.
-
-Fusekite uses the ROBDD manager in `bdd.mbt` and its own `sat/` and `smt/`
-packages. Its module metadata and package imports contain no MoonBDD
-dependency, and it has no MoonBDD adapter, interchange format, or shared BDD
-handle interface. Users call each library separately; Fusekite does not extend
-MoonBDD's API. BDD node IDs are local to their owning manager.
 
 ## Example
 
@@ -91,8 +72,72 @@ clause count, literal count, then sorted zero patterns (`- < 0 < 1`). Fully
 unconstrained tables select 1. `PosSolution` is separate from `CoverSolution`;
 `verify_pos_with_bdd` and `verify_pos_with_sat` check POS results directly on
 cared rows, with SAT counterexamples in MSB-first order and explicit `Unknown`
-on budget exhaustion. Gate estimates still accept SOP results only.
+on budget exhaustion. `estimate_pos_gate_cost` counts a direct OR-AND tree and
+shared input inversions; `@parts.estimate_74hc_pos_packages` rounds those gate
+counts by catalog family.
 See the [POS contract](DESIGN.md#product-of-sums-selection) for exact semantics.
+
+Run all three electronics demonstrations with:
+
+```sh
+moon run cmd/main
+```
+
+The demo prints SOP patterns and POS zero patterns, term/clause and literal
+counts, and the input assumptions. It checks both forms against the independently
+listed expected rows and runs their BDD/SAT equivalence checks (SAT budget:
+100,000 search nodes). A mismatch or an unproved SAT result fails the demo.
+It prints unspecified BCD rows separately, then direct SOP and POS gate/package
+estimates, DIMACS SAT examples, and a four-bit QF_BV wraparound constraint.
+Device assumptions and full truth tables are in
+[`circuits/WORKED.md`](circuits/WORKED.md); the sourced catalog is described in
+[`parts/74hc-catalog.md`](parts/74hc-catalog.md).
+
+## Three complete usage scenarios
+
+All three scenarios run with `moon run cmd/main`. Row numbers use the first
+listed input as the most significant bit; the input arrays below are the
+on-set and don't-care rows passed to `TruthSpec::new` in `circuits/examples.mbt`.
+
+| Example task | Input | Steps | Expected result |
+| --- | --- | --- | --- |
+| Compare two forms of a sensor interlock. | `door_closed, sensor_clear`; 2 inputs, on-set `[3]`, no don't-cares; active-high enable. | Run the demo; read the interlock block; decode SOP `1` as a positive literal and POS `0` as a positive literal; check all four specified rows and BDD/SAT results. | SOP `11` is `door_closed AND sensor_clear` (1 term, 2 literals). POS `-0, 0-` is `(sensor_clear) AND (door_closed)` (2 clauses, 2 literals). Both output `0,0,0,1`; each direct form uses one AND2 gate / one HC08 package. |
+| Compare an active-high BCD segment with don't-cares. | `D8,D4,D2,D1`; 4 inputs, on-set `[0,2,3,5,6,7,8,9]`, don't-cares `[10,11,12,13,14,15]`; common-cathode segment `a`, valid BCD source. | Run the demo; read the BCD block; compare cost counts and the ten specified rows; inspect the separately labeled unspecified rows. | SOP `--1-, -0-0, -1-1, 1---` has 4 terms / 6 literals. POS `-100, 0001` has 2 clauses / 7 literals: `(!D4 OR D2 OR D1) AND (D8 OR D4 OR D2 OR !D1)`. Digits 1 and 4 output 0, the other valid digits 1; BDD/SAT confirm cared-row equivalence. SOP estimates 1 HC04, 1 HC08, 1 HC32; POS estimates 1 HC04, 1 HC08, 2 HC32 packages. |
+| Study a two-of-three alarm predicate. | `sensor_A,sensor_B,sensor_C`; 3 inputs, on-set `[3,5,6,7]`, no don't-cares; equal, active-high sensor inputs. | Run the demo; read the alarm block; compare the pairwise products and sums; check all eight specified rows and both package estimates. | SOP `-11, 1-1, 11-` is `BC OR AC OR AB`; POS `-00, 0-0, 00-` is `(B OR C) AND (A OR C) AND (A OR B)`. Both have 3 terms/clauses and 6 literals, assert exactly when at least two inputs are 1, and pass BDD/SAT checks. SOP uses 3 AND2 and 2 OR2 gates / one HC08 and one HC32 package; POS uses 2 AND2 and 3 OR2 gates / one HC08 and one HC32 package. |
+
+### Choosing SOP or POS and respecting the limits
+
+SOP is an OR of AND terms covering required 1 rows. POS is an AND of OR clauses
+excluding required 0 rows; its patterns encode where a clause is false, so their
+literal polarity is opposite to SOP. Use either form for direct AND/OR gate and
+74HC package estimates; use POS to study conjunctive conditions or compare
+two-level clause/literal costs. Fewer clauses do not establish fewer gates or
+packages: the BCD result uses fewer clauses but more literals. Each minimizer
+optimizes its own term/clause count, then literals, then deterministic patterns.
+The gate estimators preserve the selected SOP or POS form; they do not search
+mixed-polarity or NAND/NOR networks. None of these results optimizes arbitrary
+networks, delay, hazards, or physical hardware.
+
+Both forms accept one output and 1–8 inputs. Don't-care rows may take different
+values in the two results: BCD code 12 evaluates to SOP 1 and POS 0. These values
+are chosen completions, not requirements. If invalid BCD can occur, specify its
+outputs instead of marking it as don't-care. Estimates count direct two-input AND/OR trees and shared input inversions; package counts round each device family independently. Constant functions report zero gates and require a logic-rail connection, which is not modeled.
+NAND/NOR mapping is not implemented. The interlock and alarm are Boolean
+teaching examples; no safety qualification or manual/hardware test is claimed.
+SAT `Unknown` must remain inconclusive, even when BDD succeeds.
+
+## Supporting reasoning modules
+
+These modules support the truth-table verification path and can also be used
+independently:
+
+| Module | Role and bounds | Source |
+| --- | --- | --- |
+| Reduced ordered BDD (ROBDD) | Canonical Boolean operations and equivalence within one fixed-order manager; 1–32 variables. Node IDs belong to their manager; diagram size can grow exponentially. | [BDD implementation](bdd.mbt) |
+| SAT | Conjunctive normal form (CNF) validation, DIMACS parsing, shared Tseitin encoding, and bounded Davis–Putnam–Logemann–Loveland (DPLL) search with two-watched-literal propagation and chronological backtracking. CNF accepts up to 4,096 variables; budget exhaustion returns `Unknown`. No conflict learning. | [SAT package](sat/solver.mbt) |
+| Bounded bit-vectors | Quantifier-free fixed-size bit-vector (QF_BV) constraints, 1–8 bits, lowered to the SAT backend. Supports bitwise operations, wrapping add/subtract, low-product multiplication, equality, and signed/unsigned comparison. | [Bit-vector front end](smt/bitvec.mbt) |
+
+### Standalone API examples
 
 The ROBDD API can also be used without creating a truth-table specification:
 
@@ -132,22 +177,6 @@ layer should not be confused with Z3 or a general-purpose SMT solver.
 `BitVec::evaluate(model)` can turn a returned source assignment back into an
 unsigned value for checking a result.
 
-Run all three electronics demonstrations with:
-
-```sh
-moon run cmd/main
-```
-
-The demo prints SOP patterns and POS zero patterns, term/clause and literal
-counts, and the input assumptions. It checks both forms against the independently
-listed expected rows and runs their BDD/SAT equivalence checks (SAT budget:
-100,000 search nodes). A mismatch or an unproved SAT result fails the demo.
-It prints unspecified BCD rows separately, followed by SOP-only gate/package
-estimates, DIMACS SAT examples, and a four-bit QF_BV wraparound constraint.
-Device assumptions and full truth tables are in
-[`circuits/WORKED.md`](circuits/WORKED.md); the sourced catalog is described in
-[`parts/74hc-catalog.md`](parts/74hc-catalog.md).
-
 The standalone solver examples also check their results: the SAT model is
 replayed against all three input clauses; contradictory units must be UNSAT;
 a four-clause contradiction must return `Unknown` at a one-node budget and
@@ -157,36 +186,25 @@ evaluated sum. Unexpected outcomes fail the executable and its existing CI
 step. For the exact inputs, API sequence, and expected output, see the
 [CNF and counter scenario walkthrough](docs/使用指南.md#独立求解场景cnf-与四位计数器).
 
-## Three complete usage scenarios
+## Relationship to MoonBDD
 
-All three scenarios run with `moon run cmd/main`. Row numbers use the first
-listed input as the most significant bit; the input arrays below are the
-on-set and don't-care rows passed to `TruthSpec::new` in `circuits/examples.mbt`.
+Both projects implement ROBDDs, Boolean operations, and equivalence checks;
+these shared capabilities are not unique to Fusekite. In the pinned version
+documented in the [source-backed scope comparison](docs/MoonBDD与Fusekite范围对比.md),
+MoonBDD also provides parsing, quantification, model counting, reordering, and
+bounded finite-state reachability.
 
-| User and task | Input | Steps | Expected result |
-| --- | --- | --- | --- |
-| A digital-logic student compares two forms of a sensor interlock. | `door_closed, sensor_clear`; 2 inputs, on-set `[3]`, no don't-cares; active-high enable. | Run the demo; read the interlock block; decode SOP `1` as a positive literal and POS `0` as a positive literal; check all four specified rows and BDD/SAT results. | SOP `11` is `door_closed AND sensor_clear` (1 term, 2 literals). POS `-0, 0-` is `(sensor_clear) AND (door_closed)` (2 clauses, 2 literals). Both output `0,0,0,1`; the SOP estimate is one AND2 gate / one HC08 package. |
-| A display-logic learner compares an active-high BCD segment with don't-cares. | `D8,D4,D2,D1`; 4 inputs, on-set `[0,2,3,5,6,7,8,9]`, don't-cares `[10,11,12,13,14,15]`; common-cathode segment `a`, valid BCD source. | Run the demo; read the BCD block; compare cost counts and the ten specified rows; inspect the separately labeled unspecified rows. | SOP `--1-, -0-0, -1-1, 1---` has 4 terms / 6 literals. POS `-100, 0001` has 2 clauses / 7 literals: `(!D4 OR D2 OR D1) AND (D8 OR D4 OR D2 OR !D1)`. Digits 1 and 4 output 0, the other valid digits 1; BDD/SAT confirm cared-row equivalence. |
-| A prototype designer studies a two-of-three alarm predicate. | `sensor_A,sensor_B,sensor_C`; 3 inputs, on-set `[3,5,6,7]`, no don't-cares; equal, active-high sensor inputs. | Run the demo; read the alarm block; compare the pairwise products and sums; check all eight specified rows and the SOP package estimate. | SOP `-11, 1-1, 11-` is `BC OR AC OR AB`; POS `-00, 0-0, 00-` is `(B OR C) AND (A OR C) AND (A OR B)`. Both have 3 terms/clauses and 6 literals, assert exactly when at least two inputs are 1, and pass BDD/SAT checks. SOP uses 3 AND2 and 2 OR2 gates / one HC08 and one HC32 package. |
+Fusekite complements that scope with a separate CNF/Tseitin/DPLL backend,
+bounded QF_BV bit-blasting, and exact small-table SOP/POS minimization with
+BDD/SAT verification. Its electronics workflow estimates direct two-level
+gate counts and 74HC package requirements from either selected form. It does`r`nnot search mixed-polarity networks or imply integration with MoonBDD.
+These are capabilities of Fusekite as a separate MoonBit library.
 
-### Choosing SOP or POS and respecting the limits
-
-SOP is an OR of AND terms covering required 1 rows. POS is an AND of OR clauses
-excluding required 0 rows; its patterns encode where a clause is false, so their
-literal polarity is opposite to SOP. Use SOP for the existing AND/OR gate and
-74HC package planning path; use POS to study conjunctive conditions or compare
-two-level clause/literal costs. Fewer clauses do not establish fewer gates or
-packages: the BCD result uses fewer clauses but more literals. Each minimizer
-optimizes its own term/clause count, then literals, then deterministic patterns;
-neither optimizes arbitrary networks, delay, hazards, or physical hardware.
-
-Both forms accept one output and 1–8 inputs. Don't-care rows may take different
-values in the two results: BCD code 12 evaluates to SOP 1 and POS 0. These values
-are chosen completions, not requirements. If invalid BCD can occur, specify its
-outputs instead of marking it as don't-care. POS gate/package estimation and
-NAND/NOR mapping are not implemented. The interlock and alarm are Boolean
-teaching examples; no safety qualification or manual/hardware test is claimed.
-SAT `Unknown` must remain inconclusive, even when BDD succeeds.
+Fusekite uses the ROBDD manager in `bdd.mbt` and its own `sat/` and `smt/`
+packages. Its module metadata and package imports contain no MoonBDD
+dependency, and it has no MoonBDD adapter, interchange format, or shared BDD
+handle interface. Users call each library separately; Fusekite does not extend
+MoonBDD's API. BDD node IDs are local to their owning manager.
 
 ## Implemented milestones
 
@@ -195,16 +213,15 @@ SAT `Unknown` must remain inconclusive, even when BDD succeeds.
 3. **Bench planning** — two-level gate estimates, a TI-sourced 74HC catalog, and three circuit examples with independent truth-table, BDD, and SAT checks.
 4. **Bounded bit-vector reasoning** — a small QF_BV bit-blasting front end for vectors up to 8 bits, with add/subtract/multiply and signed/unsigned comparison, checked against exhaustive two-bit cases and a Z3 corpus.
 5. **Exact POS minimization** — complement-cover reuse with separate clause/result types, zero-pattern presentation, checked row evaluation, constants and don't-cares, an independent cost oracle over all 6,561 three-input ternary specs, and direct BDD/SAT verification with replayed counterexamples.
+6. **POS circuit planning** — direct OR-AND gate counts and sourced 74HC package estimates, checked against the interlock, BCD, and majority examples.
 
 ## Planned work
 
-1. Evaluate POS and NAND/NOR gate/package estimation with explicit device models and independent checks.
+1. Evaluate NAND/NOR mapping with explicit device models and independent checks.
 2. Add conflict learning and measured branching heuristics only alongside independent regression oracles and a published formula set.
 3. Extend the deterministic Z3 differential corpus beyond the current bounded operator and width matrix before adding more QF_BV constructs.
 4. Consider division, shifts, and concatenation only with width-boundary and independent semantic tests; the current front end does not implement full SMT.
 5. Add pin-level wiring guidance only for exact device variants after datasheet review; physical qualification remains out of scope until actually performed.
-
-The examples cover a two-sensor interlock, one BCD-to-seven-segment output, and a threshold/alarm condition.
 
 ## Project shape
 

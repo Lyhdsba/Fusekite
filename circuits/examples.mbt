@@ -275,6 +275,8 @@ test "worked POS examples match expected rows and direct symbolic checks" {
   let examples = [sensor_interlock(), bcd_segment_a(), majority_alarm()]
   let patterns = [["-0", "0-"], ["-100", "0001"], ["-00", "0-0", "00-"]]
   let literal_counts = [2, 7, 6]
+  let pos_gate_counts = [[0, 1, 0], [2, 1, 5], [0, 2, 3]]
+  let pos_package_counts = [[0, 1, 0], [1, 1, 2], [0, 1, 1]]
   let config = @sat.SolverConfig::new(100_000).unwrap()
   for index in 0..<examples.length() {
     let example = examples[index]
@@ -293,6 +295,14 @@ test "worked POS examples match expected rows and direct symbolic checks" {
       @fusekite.verify_pos_with_sat(example.spec, pos, config)
       is @fusekite.SatEquivalence::Equivalent,
     )
+    let gates = @fusekite.estimate_pos_gate_cost(example.spec, pos).unwrap()
+    assert_eq(gates.inverters, pos_gate_counts[index][0])
+    assert_eq(gates.and2_gates, pos_gate_counts[index][1])
+    assert_eq(gates.or2_gates, pos_gate_counts[index][2])
+    let packages = @parts.estimate_74hc_pos_packages(gates)
+    assert_eq(packages.inverters, pos_package_counts[index][0])
+    assert_eq(packages.and_packages, pos_package_counts[index][1])
+    assert_eq(packages.or_packages, pos_package_counts[index][2])
   }
   // The two minimizers may choose different completions on unspecified BCD rows.
   let bcd = bcd_segment_a()

@@ -8,10 +8,8 @@ historical observations, not the current project status. Commands were run
 from the checkout root unless stated otherwise.
 
 For current capabilities, CI evidence, reproduction, and plans, start with
-[the current development record](../DEVELOPMENT.md). The original evidence
-and AI contribution statements remain below; relative links were adjusted
-for this file's location. Moving this record does not remove prior files
-or wording from Git history.
+[the current development record](../DEVELOPMENT.md). Entries below record
+implementation changes, automated results, and AI contributions by revision.
 
 ## Who decided what
 
@@ -40,7 +38,7 @@ commit history and this record should be read together.
 | `7e3a72a` | Integer-overflow guard and sparse eight-input boundary cases | 22 tests passed locally and [remote CI passed](https://github.com/Lyhdsba/Fusekite/actions/runs/36376524489). |
 | `62e6c5c` | Disclosed substantial AI assistance and recorded owner-review items | This disclosure does not establish manual review or hardware validation. |
 | `c963a0a` | Pinned CI runner and Node-compatible checkout action | [Remote CI passed](https://github.com/Lyhdsba/Fusekite/actions/runs/36376743147). |
-| `6f60cc2` | Added the competition proposal with AI contribution disclosure | Removed personal contact details from the public copy; [remote CI passed](https://github.com/Lyhdsba/Fusekite/actions/runs/36399790990). |
+| `6f60cc2` | Added the competition proposal with AI contribution disclosure | [Remote CI passed](https://github.com/Lyhdsba/Fusekite/actions/runs/36399790990). |
 | `7427929` | Snapshotted caller-owned truth-table arrays during validation | Added a regression test; 23 tests passed and [remote CI passed](https://github.com/Lyhdsba/Fusekite/actions/runs/36408528637). |
 | `0dd93e0` | Hid validated row arrays and exposed defensive-copy accessors | Added a cross-package mutation regression; 23 tests and local format, check, build, demo, docs, and package checks passed before push. |
 | `a349dbc` | Added canonical ROBDD operations and BDD-based SOP verification | 28 tests passed; [remote CI passed](https://github.com/Lyhdsba/Fusekite/actions/runs/36678108262). |
@@ -86,9 +84,8 @@ the next verification increment below adds dedicated POS BDD/SAT checks.
 The preceding main revision `1dbdb5b` failed its [remote format check](https://github.com/Lyhdsba/Fusekite/actions/runs/38590700258):
 the automatically installed Moon `0.1.20261012` formatter rewrites `Int` as
 `Int32`, unlike the local toolchain. This is a pre-existing toolchain drift;
-the local results above do not establish remote CI success. No unverified
-historical SDK pin or broad integer-type migration is included in this POS
-increment.
+the local results above do not establish remote CI success. This POS
+increment still used the older local SDK.
 
 ## POS independent verification increment (2026-10-15)
 
@@ -229,7 +226,7 @@ human review, personal reproduction, user feedback, or hardware testing.
 The [Chinese usage guide](../docs/使用指南.md) brings together the implemented API
 entry points, truth-table input rules, SOP/POS pattern polarity, three runnable
 circuits, SAT outcome interpretation, and the SOP-only device estimate model.
-README links directly to it. The MoonBDD comparison remains tied to fixed
+The MoonBDD comparison remains tied to fixed
 source revisions rather than asserting the current state of an upstream branch.
 No algorithm or public API changed in this documentation revision.
 
@@ -274,14 +271,10 @@ testing is claimed.
 
 ## Downstream consumer and entry workflow (2026-10-15)
 
-The maintainer explicitly set the priority of clarifying the main usage
-workflow and adding an independently runnable consumer where absent. Source
-inspection found that the existing circuit and solver demonstrations all
-belonged to the library module. The AI coding assistant analyzed that gap,
-implemented the consumer and documentation, and ran the automated checks.
+An AI coding assistant substantially contributed to the downstream consumer,
+its documentation, and automated validation.
 
-README now introduces the truth-table-to-verification-to-SOP-estimate path
-before the API inventory. `examples/status-indicator` is a separate MoonBit
+`examples/status-indicator` is a separate MoonBit
 module declaring a Fusekite dependency; `examples/moon.work` resolves it from
 the checkout rather than assuming a Mooncakes publication. The consumer's
 own four-input build/review indicator rule differs from the built-in circuits.
@@ -304,10 +297,9 @@ review, user feedback, physical testing, or a subsequent remote CI result.
 
 ## Pinned toolchain and clean-install validation (2026-10-16)
 
-The maintainer explicitly requested reproducible CI using a verified SDK.
-The AI coding assistant inspected the existing results and official installers,
-updated CI and the installation guide, and ran automated validation. No human
-review, manual reproduction, user feedback, or hardware testing is claimed.
+An AI coding assistant substantially contributed to the CI toolchain pin,
+installation guide, and automated validation. No human review, manual
+reproduction, user feedback, or hardware testing is claimed.
 
 CI previously invoked the official installer without a version, implicitly
 selecting `latest`. It now reads `.moonbit-version`, passes the exact compiler

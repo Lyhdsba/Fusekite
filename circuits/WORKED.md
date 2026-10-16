@@ -10,7 +10,8 @@ checks SOP literal simulation and POS evaluation against the listed expected
 rows, then requires BDD and SAT equivalence for both forms. SAT uses a 100,000
 search-node budget; `Unknown`, a counterexample, or invalid input fails the demo
 instead of printing an equivalence claim. The unit tests also pin the selected
-POS patterns and costs. Gate and package figures below apply only to SOP.
+POS patterns and costs. Both forms are mapped as direct positive-logic
+AND/OR trees; package figures round each device family separately.
 
 POS zero patterns describe when a sum clause is false: `0` means a positive
 literal, `1` an inverted literal, and `-` an omitted variable. The clauses are
@@ -23,7 +24,8 @@ only for row `11`, so `F = door_closed · sensor_clear`. The direct SOP uses one
 AND2 gate: one SN74HC08 package (four channels available).
 
 POS patterns `-0`, `0-` give `(sensor_clear) AND (door_closed)`, with two
-single-literal clauses and two literals; both forms match all four rows.
+single-literal clauses and two literals. The direct POS estimate is one AND2,
+also one SN74HC08 package; both forms match all four rows.
 
 | `door_closed sensor_clear` | 00 | 01 | 10 | 11 |
 | --- | ---: | ---: | ---: | ---: |
@@ -61,7 +63,10 @@ POS patterns `-100`, `0001` give
 This reduces clause count relative to SOP's four terms, but increases literals
 relative to SOP's six. Both agree on digits 0–9; code 12 produces SOP 1 and
 POS 0, which is permitted by its don't-care designation. Neither completion is
-a required behavior for invalid BCD. There is no POS hardware estimate.
+a required behavior for invalid BCD. A direct POS mapping uses two shared input
+inverters, one AND2, and five OR2 gates: one SN74HC04, one SN74HC08, and two
+SN74HC32 packages. This estimate preserves the selected POS form; it does not
+search for a cheaper mixed-polarity or NAND/NOR network.
 
 ## Two-of-three sensor alarm
 
@@ -73,6 +78,8 @@ OR2 gates: one SN74HC08 and one SN74HC32 package.
 
 POS patterns `-00`, `0-0`, `00-` give `(B + C) · (A + C) · (A + B)`.
 Both forms have three terms/clauses and six literals and match all eight rows.
+The direct POS tree uses two AND2 and three OR2 gates, one SN74HC08 and one
+SN74HC32 package.
 
 Each worked case has a separately authored expected output vector in
 `examples.mbt`, distinct from the on-set used to construct its truth-table

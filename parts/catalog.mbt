@@ -9,7 +9,7 @@ pub struct LogicPart {
 }
 
 ///|
-/// Package counts for a direct mapping of the SOP gate estimate.
+/// Package counts for a direct two-level gate estimate.
 pub struct PackagePlan {
   inverters : Int32
   and_packages : Int32
@@ -65,11 +65,7 @@ pub fn LogicPart::packages_required(
 }
 
 ///|
-/// Estimate package counts for the direct two-level SOP mapping.
-///
-/// NAND2 is cataloged for manual alternatives, but this mapping uses AND2,
-/// OR2 and NOT parts. Counts are rounded independently by package family.
-pub fn estimate_74hc_packages(cost : @fusekite.GateCost) -> PackagePlan {
+fn package_plan_for(cost : @fusekite.GateCost) -> PackagePlan {
   {
     inverters: match @fusekite.GateCost::packages_for(cost.inverters, 6) {
       Some(count) => count
@@ -84,6 +80,24 @@ pub fn estimate_74hc_packages(cost : @fusekite.GateCost) -> PackagePlan {
       None => 0
     },
   }
+}
+
+///|
+/// Estimate package counts for a direct two-level SOP mapping.
+///
+/// NAND2 is cataloged for manual alternatives, but this mapping uses AND2,
+/// OR2 and NOT parts. Counts are rounded independently by package family.
+pub fn estimate_74hc_packages(cost : @fusekite.GateCost) -> PackagePlan {
+  package_plan_for(cost)
+}
+
+///|
+/// Estimate package counts for a direct two-level POS mapping.
+///
+/// The counts use the same AND2, OR2, and NOT families as the SOP estimate.
+/// NAND/NOR transformations and device-level electrical checks are excluded.
+pub fn estimate_74hc_pos_packages(cost : @fusekite.GateCost) -> PackagePlan {
+  package_plan_for(cost)
 }
 
 ///|
@@ -116,4 +130,16 @@ test "package estimate rounds each part family independently" {
   assert_eq(plan.or_packages, 1)
   assert_eq(standard_74hc_catalog()[0].packages_required(5), Some(2))
   assert_eq(standard_74hc_catalog()[3].packages_required(7), Some(2))
+}
+
+///|
+test "POS package estimate rounds the BCD OR tree independently" {
+  let cost = match @fusekite.GateCost::new(2, 1, 5) {
+    Some(cost) => cost
+    None => fail("valid POS gate cost was rejected")
+  }
+  let plan = estimate_74hc_pos_packages(cost)
+  assert_eq(plan.inverters, 1)
+  assert_eq(plan.and_packages, 1)
+  assert_eq(plan.or_packages, 2)
 }

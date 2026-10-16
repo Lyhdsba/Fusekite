@@ -5,6 +5,8 @@ fn show_example(example : @circuits.CircuitExample) -> Unit raise {
   let pos = @fusekite.minimize_pos(example.spec)
   let cost = @fusekite.estimate_sop_gate_cost(example.spec, solution)
   let packages = @parts.estimate_74hc_packages(cost)
+  let pos_cost = @fusekite.estimate_pos_gate_cost(example.spec, pos).unwrap()
+  let pos_packages = @parts.estimate_74hc_pos_packages(pos_cost)
   println("\n\{example.name}")
   let mut labels = ""
   for index in 0..<example.input_labels.length() {
@@ -63,12 +65,17 @@ fn show_example(example : @circuits.CircuitExample) -> Unit raise {
   println(
     "SOP/POS expected rows: \{checked}; BDD: equivalent; SAT: equivalent (budget 100000)",
   )
-  println("SOP estimates only; POS gate/package estimates are not implemented.")
   println(
-    "gate counts (NOT, AND2, OR2): \{cost.inverters}, \{cost.and2_gates}, \{cost.or2_gates}",
+    "SOP direct gate counts (NOT, AND2, OR2): \{cost.inverters}, \{cost.and2_gates}, \{cost.or2_gates}",
   )
   println(
-    "SN74HC packages (HC04, HC08, HC32): \{packages.inverters}, \{packages.and_packages}, \{packages.or_packages}",
+    "SOP 74HC packages (HC04, HC08, HC32): \{packages.inverters}, \{packages.and_packages}, \{packages.or_packages}",
+  )
+  println(
+    "POS direct gate counts (NOT, AND2, OR2): \{pos_cost.inverters}, \{pos_cost.and2_gates}, \{pos_cost.or2_gates}",
+  )
+  println(
+    "POS 74HC packages (HC04, HC08, HC32): \{pos_packages.inverters}, \{pos_packages.and_packages}, \{pos_packages.or_packages}",
   )
 }
 
