@@ -12,6 +12,19 @@ behavior.
 
 中文使用说明见[使用指南](docs/使用指南.md)，涵盖输入规格、SOP/POS 解读、三个可运行场景与器件估算边界。
 
+## Install from Mooncakes
+
+After the `0.2.0` release is available on Mooncakes, add Fusekite to another
+MoonBit project from its root directory:
+
+```sh
+moon add Lyhdsba/fusekite
+```
+
+Moon records the resolved release in the consuming module's `moon.mod`. For an
+end-to-end example, see the
+[status-indicator consumer](examples/status-indicator/README.md).
+
 ## Start with your own logic table
 
 The main workflow is for a MoonBit developer or digital-logic learner who
@@ -197,7 +210,8 @@ bounded finite-state reachability.
 Fusekite complements that scope with a separate CNF/Tseitin/DPLL backend,
 bounded QF_BV bit-blasting, and exact small-table SOP/POS minimization with
 BDD/SAT verification. Its electronics workflow estimates direct two-level
-gate counts and 74HC package requirements from either selected form. It does`r`nnot search mixed-polarity networks or imply integration with MoonBDD.
+gate counts and 74HC package requirements from either selected form. It does
+not search mixed-polarity networks or imply integration with MoonBDD.
 These are capabilities of Fusekite as a separate MoonBit library.
 
 Fusekite uses the ROBDD manager in `bdd.mbt` and its own `sat/` and `smt/`
