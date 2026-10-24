@@ -1,6 +1,6 @@
 # Development and validation
 
-Status checked: 2026-10-16. Start with the [README](README.md) for usage,
+Status checked: 2026-10-24. Start with the [README](README.md) for usage,
 [DESIGN.md](DESIGN.md) for contracts, and the
 [full historical record](docs/development-history.md) for earlier decisions,
 checks, and their original limitations.
@@ -110,3 +110,25 @@ consumer's formatting/check/run, API documentation, and package listing. The
 QF_BV differential corpus also passed all 3,586 Z3 cases. The circuit outputs
 now expose separate direct SOP and POS gate/package counts. These are local
 results for this tree; remote CI and physical hardware checks are not claimed.
+
+## October acceptance and release checkpoint (2026-10-24)
+
+At `f48a75d`, the README includes the Mooncakes installation command and the
+visible text corruption in the MoonBDD scope note is corrected. The new
+`.moonignore` keeps the repository's cache/build exclusions and excludes the
+root-level submission draft and `output/` artifacts from release archives.
+`moon package --list` was checked with those local files present and omitted
+both paths.
+
+On Windows with the SDK pinned by [`.moonbit-version`](.moonbit-version),
+formatting, warning-free type checking, all 68 tests, build, the three worked
+circuits, consumer format/check/run, API documentation, and package listing
+passed. The pinned Z3 oracle passed all 3,586 QF_BV cases. The GitHub Actions
+[run for `f48a75d`](https://github.com/Lyhdsba/Fusekite/actions/runs/40106648234)
+also passed.
+
+The repository is public, the October history contains substantive feature,
+test, example, and documentation commits, and the implemented project scope
+is described above. The module is not yet present in the Mooncakes registry;
+publication of `Lyhdsba/fusekite` and a clean downstream install from that
+published release remain the final acceptance evidence to complete.
