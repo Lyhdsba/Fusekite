@@ -68,6 +68,9 @@ jobs:
           moon -C examples/status-indicator check --deny-warn
           moon -C examples/status-indicator run .
 
+      - name: Test the QF_BV evidence gate
+        run: python -B -m unittest discover -s tests -p 'test_*.py' -v
+
       - name: Differentially check QF_BV cases with Z3
         run: python tests/qfbv_z3_oracle.py
 

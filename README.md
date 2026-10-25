@@ -274,10 +274,15 @@ install Python 3.12, install the pinned test-only solver package, then run:
 
 ```sh
 python -m pip install -r tests/requirements.txt
-python tests/qfbv_z3_oracle.py
+python -B -m unittest discover -s tests -p 'test_*.py' -v
+python -B tests/qfbv_z3_oracle.py
 ```
 
-This tooling is not a runtime dependency of the MoonBit library.
+The Python tests inject malformed and incomplete corpus output to check that
+the evidence gate fails. The differential check requires all 3,586 distinct
+operator/width/target cases exactly once, compares SAT/UNSAT with Z3, and
+replays every SAT model within its declared unsigned width. This tooling is
+not a runtime dependency of the MoonBit library.
 
 The GitHub Actions workflow pins an Ubuntu LTS image and a Node 24-compatible
 checkout action, then runs formatting, check, tests, build, built-in and
@@ -285,7 +290,9 @@ downstream examples, package validation, and the separate Z3 differential
 corpus on pushes to `main` and pull requests.
 
 See [DEVELOPMENT.md](DEVELOPMENT.md) for the AI contribution statement,
-reproducible checks, and validation limits.
+reproducible checks, and validation limits. The
+[stage 2 acceptance audit](docs/acceptance-stage2.md) maps the core tests,
+executable examples, CI gates, and remaining coverage boundaries.
 
 ## Mooncakes metadata
 

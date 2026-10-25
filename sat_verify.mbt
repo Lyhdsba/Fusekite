@@ -158,3 +158,78 @@ test "SAT verifier rejects a cover with the wrong input width" {
   assert_true(verify_sop_with_sat(spec, invalid, config) is InvalidInput)
   assert_true(!verify_sop_with_bdd(spec, invalid))
 }
+
+///|
+test "SOP SAT verification preserves budget exhaustion" {
+  let spec = TruthSpec::new(3, [3, 5, 6, 7], []).unwrap()
+  let solution = minimize_sop(spec)
+  assert_true(verify_sop_with_bdd(spec, solution))
+  assert_true(
+    verify_sop_with_sat(spec, solution, @sat.SolverConfig::new(1).unwrap())
+    is Unknown(_),
+  )
+  assert_true(
+    verify_sop_with_sat(
+      spec,
+      solution,
+      @sat.SolverConfig::new(100_000).unwrap(),
+    )
+    is Equivalent,
+  )
+}
+
+///|
+test "SOP verifiers check every two-input completion and replay cared witnesses" {
+  let config = @sat.SolverConfig::new(100_000).unwrap()
+  // 3^4 specifications (zero, one, don't-care) x 2^4 candidate functions.
+  // Expected equivalence comes from row sets, not the SOP/BDD/SAT encoders.
+  for code in 0..<81 {
+    let on_set : Array[Int32] = []
+    let dc : Array[Int32] = []
+    let mut digits = code
+    for row in 0..<4 {
+      if digits % 3 == 1 {
+        on_set.push(row)
+      } else if digits % 3 == 2 {
+        dc.push(row)
+      }
+      digits /= 3
+    }
+    let spec = TruthSpec::new(2, on_set, dc).unwrap()
+    for truth_bits in 0..<16 {
+      let candidate_on : Array[Int32] = []
+      for row in 0..<4 {
+        if ((truth_bits >> row) & 1) == 1 {
+          candidate_on.push(row)
+        }
+      }
+      let candidate = minimize_sop(TruthSpec::new(2, candidate_on, []).unwrap())
+      let mut equivalent = true
+      for row in 0..<4 {
+        if !dc.contains(row) &&
+          candidate_on.contains(row) != on_set.contains(row) {
+          equivalent = false
+        }
+      }
+      assert_eq(verify_sop_with_bdd(spec, candidate), equivalent)
+      match verify_sop_with_sat(spec, candidate, config) {
+        Equivalent => assert_true(equivalent)
+        Counterexample(inputs) => {
+          assert_true(!equivalent)
+          assert_eq(inputs.length(), 2)
+          let row = (if inputs[0] { 2 } else { 0 }) +
+            (if inputs[1] { 1 } else { 0 })
+          assert_true(!dc.contains(row))
+          assert_true(candidate_on.contains(row) != on_set.contains(row))
+          let mut actual = false
+          for cube in candidate.selected {
+            actual = actual || cube.covers_row(row)
+          }
+          assert_eq(actual, candidate_on.contains(row))
+        }
+        _ =>
+          fail("small SOP comparison must finish with proof or counterexample")
+      }
+    }
+  }
+}

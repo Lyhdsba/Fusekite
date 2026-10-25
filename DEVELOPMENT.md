@@ -1,5 +1,9 @@
 # Development and validation
 
+The [2026-10-25 stage 2 acceptance audit](docs/acceptance-stage2.md) records the
+test/example/CI review, the reproduced QF_BV corpus-integrity gap and fix, new
+SOP verifier regressions, reproduction commands, and uncovered boundaries.
+
 Status checked: 2026-10-24. Start with the [README](README.md) for usage,
 [DESIGN.md](DESIGN.md) for contracts, and the
 [full historical record](docs/development-history.md) for earlier decisions,
