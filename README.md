@@ -292,7 +292,9 @@ corpus on pushes to `main` and pull requests.
 See [DEVELOPMENT.md](DEVELOPMENT.md) for the AI contribution statement,
 reproducible checks, and validation limits. The
 [stage 2 acceptance audit](docs/acceptance-stage2.md) maps the core tests,
-executable examples, CI gates, and remaining coverage boundaries.
+executable examples, CI gates, and remaining coverage boundaries. The
+[GitHub and acceptance cross-check](docs/acceptance-stage3.md) maps the October
+criteria, source history, verified CI revision, and outstanding release evidence.
 
 ## Mooncakes metadata
 

@@ -1,10 +1,15 @@
 # Development and validation
 
+The [2026-10-25 GitHub and acceptance cross-check](docs/acceptance-stage3.md)
+maps the October site's six criteria and the supplied nine requirements to
+source, tests, substantive October commits, and exact remote CI evidence.
+Registry publication and a clean registry consumer remain separate work.
+
 The [2026-10-25 stage 2 acceptance audit](docs/acceptance-stage2.md) records the
 test/example/CI review, the reproduced QF_BV corpus-integrity gap and fix, new
 SOP verifier regressions, reproduction commands, and uncovered boundaries.
 
-Status checked: 2026-10-24. Start with the [README](README.md) for usage,
+Status checked: 2026-10-25. Start with the [README](README.md) for usage,
 [DESIGN.md](DESIGN.md) for contracts, and the
 [full historical record](docs/development-history.md) for earlier decisions,
 checks, and their original limitations.
@@ -41,8 +46,9 @@ Mooncakes; the consumer resolves this checkout through `examples/moon.work`.
 
 ## Verified revisions and CI evidence
 
-These completed runs were checked on 2026-10-16. Each link applies to its
-recorded commit, not to later untested changes.
+The earlier runs below were checked on 2026-10-16; the `426836a` run was
+checked on 2026-10-25. Each link applies to its recorded commit, not to later
+untested changes.
 
 | Revision | Material change | Completed remote evidence |
 | --- | --- | --- |
@@ -51,6 +57,7 @@ recorded commit, not to later untested changes.
 | `fc6100c` | Standalone SAT model replay, budget checks, and QF_BV concrete replay in the executable | [Successful CI](https://github.com/Lyhdsba/Fusekite/actions/runs/38684330368) |
 | `6e5ae9e` | Separate downstream module and its application assertions | [Successful CI](https://github.com/Lyhdsba/Fusekite/actions/runs/38748465937) |
 | `7279bcf` | Exact SDK selector, installer/version guards, and reproduction guide | [Successful CI](https://github.com/Lyhdsba/Fusekite/actions/runs/38826122016) |
+| `426836a` | SOP verifier regressions and complete QF_BV corpus/model evidence gates; 70 MoonBit tests, 10 Python tests, and 3,586 Z3 cases | [Successful CI](https://github.com/Lyhdsba/Fusekite/actions/runs/40146045134) |
 
 The `7279bcf` run used Ubuntu 24.04, Moon `0.1.20261012` / moonc
 `v0.10.15+943464bfa`, and the default Wasm target. Its logs confirm 66 tests,
