@@ -1,6 +1,7 @@
 # Local submission artifacts do not belong in the published library.
 /Fusekite_项目申报书.md
 /output/
+/第二周训练计划.docx
 
 # Keep the archive exclusions from .gitignore. When .moonignore exists,
 # Moon uses it instead of .gitignore while creating a package archive.

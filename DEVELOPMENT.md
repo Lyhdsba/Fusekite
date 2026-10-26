@@ -1,5 +1,9 @@
 # Development and validation
 
+The [2026-10-26 final acceptance audit](docs/acceptance-stage6.md) consolidates
+the technical evidence and remaining participant confirmations. Technical
+readiness does not establish an organizer decision or personal understanding.
+
 The [2026-10-25 GitHub and acceptance cross-check](docs/acceptance-stage3.md)
 maps the October site's six criteria and the supplied nine requirements to
 source, tests, substantive October commits, and exact remote CI evidence.
@@ -44,8 +48,9 @@ Fusekite has no MoonBDD dependency or interoperability interface. The
 [comparison](docs/MoonBDD与Fusekite范围对比.md) uses fixed source revisions,
 distinguishes shared ROBDD capabilities, and separates September's baseline
 from October's POS minimizer and direct POS gate estimate. It establishes
-neither integration nor ecosystem-wide uniqueness. Module metadata is not proof of publication on
-Mooncakes; the consumer resolves this checkout through `examples/moon.work`.
+neither integration nor ecosystem-wide uniqueness. The local-source consumer
+resolves this checkout through `examples/moon.work`; the separate
+[registry consumer](docs/acceptance-stage5.md) verifies the published `0.2.0`.
 
 ## Verified revisions and CI evidence
 
@@ -111,10 +116,12 @@ models for NAND/NOR estimates, independently checked SAT improvements,
 broader QF_BV differential coverage before new operators, and device-specific
 wiring guidance after datasheet review. These are plans, not delivered features.
 
-The maintainer still needs to establish and record any personal reproduction,
-independent review, external user feedback, exact-device datasheet checks,
-or physical testing before claiming them. Any release also needs an explicit
-publication decision and confirmation of the actual registry version.
+The maintainer still needs to personally confirm understanding of the design,
+AI-assisted changes, and fulfillment of the formally approved proposal.
+Personal reproduction, independent review, external user feedback, exact-device
+datasheet checks, or physical testing must be established before being claimed.
+Version `0.2.0` is published and verified by the registry consumer; future
+releases require their own publication and validation evidence.
 
 ## POS gate-planning verification (2026-10-16)
 
