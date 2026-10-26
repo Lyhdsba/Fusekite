@@ -41,8 +41,26 @@ moon -C examples/status-indicator run .
 [`../moon.work`](../moon.work) 同时包含库与消费者，因此按
 [MoonBit 工作区规则](https://docs.moonbitlang.com/en/latest/toolchain/moon/module.html#dependency-management)
 使用本地库源码，忽略依赖的注册表版本。命令无需先发布 Fusekite，
-也不证明该版本在 Mooncakes 上可用。复制模块到别处时，需要建立指向库的
-工作区成员路径，或另行确认并选择已发布版本。
+也不证明该版本在 Mooncakes 上可用。
+
+## 从 Mooncakes 注册表复现
+
+`Lyhdsba/fusekite@0.2.0` 已于 2026-10-26 在仓库外独立安装并执行本例。
+在仓库根目录运行（Python 3.12 和 README 指定 SDK 需在 PATH 中）：
+
+```sh
+python -B tests/registry_consumer.py --version 0.2.0
+```
+
+脚本只复制本例的 `main.mbt` 和 `moon.pkg` 到新的临时目录，生成独立
+`moon.mod`，不复制 `../moon.work`、库源码或依赖缓存。它检查临时目录
+不在仓库及其他 MoonBit 工作区内，执行 `moon add Lyhdsba/fusekite@0.2.0`，
+核对下载模块的名称/版本，输出依赖树，再运行格式检查、无警告检查与示例。
+无法安装时直接失败，不退回本地源码。临时消费者在结束时清理。
+
+独立的 [Mooncakes registry consumer workflow](../../.github/workflows/registry-consumer.yml)
+可手动选择已发布版本运行；原有源码消费者 CI 路径继续保留。
+完整证据与边界见 [stage 5](../../docs/acceptance-stage5.md)。
 
 预期输出：
 

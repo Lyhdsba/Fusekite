@@ -3,13 +3,16 @@
 The [2026-10-25 GitHub and acceptance cross-check](docs/acceptance-stage3.md)
 maps the October site's six criteria and the supplied nine requirements to
 source, tests, substantive October commits, and exact remote CI evidence.
-Registry publication and a clean registry consumer remain separate work.
+The [2026-10-26 stage 5 check](docs/acceptance-stage5.md) subsequently installed
+`Lyhdsba/fusekite@0.2.0` from Mooncakes in a clean independent consumer and ran
+its public API assertions. A separate manual workflow reproduces this registry
+path; the existing local-source consumer CI remains in place.
 
 The [2026-10-25 stage 2 acceptance audit](docs/acceptance-stage2.md) records the
 test/example/CI review, the reproduced QF_BV corpus-integrity gap and fix, new
 SOP verifier regressions, reproduction commands, and uncovered boundaries.
 
-Status checked: 2026-10-25. Start with the [README](README.md) for usage,
+Status checked: 2026-10-26. Start with the [README](README.md) for usage,
 [DESIGN.md](DESIGN.md) for contracts, and the
 [full historical record](docs/development-history.md) for earlier decisions,
 checks, and their original limitations.
@@ -140,6 +143,6 @@ also passed.
 
 The repository is public, the October history contains substantive feature,
 test, example, and documentation commits, and the implemented project scope
-is described above. The module is not yet present in the Mooncakes registry;
-publication of `Lyhdsba/fusekite` and a clean downstream install from that
-published release remain the final acceptance evidence to complete.
+is described above. At that checkpoint the module was not yet present in the
+Mooncakes registry; publication of `Lyhdsba/fusekite` and a clean downstream
+install remained outstanding. The later stage 5 evidence is linked above.

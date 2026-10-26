@@ -1,0 +1,40 @@
+name: Mooncakes registry consumer
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Published Fusekite version to install and verify
+        required: true
+        default: "0.2.0"
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  registry-consumer:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out consumer application and validation script
+        uses: actions/checkout@v5
+
+      - name: Install pinned MoonBit SDK
+        shell: bash
+        run: |
+          version="$(tr -d '\r\n' < .moonbit-version)"
+          [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+\+[0-9a-f]+$ ]]
+          curl -fsSL https://cli.moonbitlang.com/install/unix.sh -o "$RUNNER_TEMP/install-moonbit.sh"
+          bash "$RUNNER_TEMP/install-moonbit.sh" "$version"
+          echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
+
+      - name: Install Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install registry release and run independent API consumer
+        env:
+          REGISTRY_VERSION: ${{ inputs.version }}
+        run: python -B tests/registry_consumer.py --version "$REGISTRY_VERSION"

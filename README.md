@@ -14,8 +14,9 @@ behavior.
 
 ## Install from Mooncakes
 
-After the `0.2.0` release is available on Mooncakes, add Fusekite to another
-MoonBit project from its root directory:
+`Lyhdsba/fusekite@0.2.0` was installed from Mooncakes and checked in an
+independent consumer on 2026-10-26 with the pinned SDK. From another
+MoonBit project's root directory, add the library:
 
 ```sh
 moon add Lyhdsba/fusekite
@@ -24,6 +25,17 @@ moon add Lyhdsba/fusekite
 Moon records the resolved release in the consuming module's `moon.mod`. For an
 end-to-end example, see the
 [status-indicator consumer](examples/status-indicator/README.md).
+To reproduce the release check from this checkout with Python 3.12 and the
+[pinned SDK](docs/toolchain.md) on PATH:
+
+```sh
+python -B tests/registry_consumer.py --version 0.2.0
+```
+
+This creates a temporary module outside the checkout, installs the named
+registry version, and runs the consumer's public API assertions. It fails if
+the release is unavailable or an enclosing MoonBit workspace could override
+dependency resolution. See the [stage 5 evidence](docs/acceptance-stage5.md).
 
 ## Start with your own logic table
 
